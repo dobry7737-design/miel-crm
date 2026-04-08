@@ -1,0 +1,250 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  /* Palette logo mesurée : #167F3C / #E4D837 / #E8141B */
+  --color-brand-yellow: oklch(0.86 0.17 102);
+  --color-brand-red: oklch(0.55 0.22 27);
+}
+
+:root {
+  --radius: 0.625rem;
+  /* Marque Ferme Agri Bio — verts teintés ~146°, jaune / rouge logo */
+  --brand-green: #167f3c;
+  --brand-yellow: #e4d837;
+  --brand-red: #e8141b;
+  /* Fond légèrement chaud (beige / terre) + verts AgriBio */
+  --background: oklch(0.978 0.008 95);
+  --foreground: oklch(0.22 0.03 150);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.03 150);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.03 150);
+  --primary: oklch(0.44 0.125 146);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.95 0.012 150);
+  --secondary-foreground: oklch(0.26 0.04 150);
+  --muted: oklch(0.955 0.012 95);
+  --muted-foreground: oklch(0.48 0.02 150);
+  --accent: oklch(0.93 0.025 150);
+  --accent-foreground: oklch(0.26 0.04 150);
+  --destructive: oklch(0.55 0.22 27);
+  --border: oklch(0.9 0.012 150);
+  --input: oklch(0.9 0.012 150);
+  --ring: oklch(0.44 0.125 146);
+  --chart-1: oklch(0.44 0.125 146);
+  --chart-2: oklch(0.86 0.17 102);
+  --chart-3: oklch(0.55 0.18 260);
+  --chart-4: oklch(0.62 0.12 155);
+  --chart-5: oklch(0.52 0.14 35);
+  --sidebar: oklch(0.2 0.045 155);
+  --sidebar-foreground: oklch(0.96 0.01 150);
+  --sidebar-primary: oklch(0.55 0.12 150);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.28 0.04 155);
+  --sidebar-accent-foreground: oklch(0.96 0.01 150);
+  --sidebar-border: oklch(0.32 0.04 155);
+  --sidebar-ring: oklch(0.55 0.12 150);
+}
+
+.dark {
+  --background: oklch(0.16 0.02 155);
+  --foreground: oklch(0.96 0.01 150);
+  --card: oklch(0.21 0.025 155);
+  --card-foreground: oklch(0.96 0.01 150);
+  --popover: oklch(0.21 0.025 155);
+  --popover-foreground: oklch(0.96 0.01 150);
+  --primary: oklch(0.63 0.13 146);
+  --primary-foreground: oklch(0.12 0.02 155);
+  --secondary: oklch(0.28 0.03 155);
+  --secondary-foreground: oklch(0.96 0.01 150);
+  --muted: oklch(0.28 0.025 155);
+  --muted-foreground: oklch(0.66 0.02 150);
+  --accent: oklch(0.3 0.035 155);
+  --accent-foreground: oklch(0.96 0.01 150);
+  --destructive: oklch(0.62 0.2 25);
+  --border: oklch(0.32 0.03 155);
+  --input: oklch(0.32 0.03 155);
+  --ring: oklch(0.63 0.13 146);
+  --chart-1: oklch(0.63 0.13 146);
+  --chart-2: oklch(0.86 0.17 102);
+  --chart-3: oklch(0.62 0.16 260);
+  --chart-4: oklch(0.72 0.1 155);
+  --chart-5: oklch(0.58 0.14 35);
+  --sidebar: oklch(0.14 0.025 155);
+  --sidebar-foreground: oklch(0.96 0.01 150);
+  --sidebar-primary: oklch(0.6 0.12 150);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.24 0.03 155);
+  --sidebar-accent-foreground: oklch(0.96 0.01 150);
+  --sidebar-border: oklch(0.3 0.03 155);
+  --sidebar-ring: oklch(0.6 0.12 150);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ========== Custom Scrollbar ========== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: oklch(0.78 0.03 150);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.65 0.06 146);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: oklch(0.35 0.03 155);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: oklch(0.45 0.05 150);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.78 0.03 150) transparent;
+}
+
+.dark * {
+  scrollbar-color: oklch(0.35 0.03 155) transparent;
+}
+
+/* ========== Smooth Transitions ========== */
+.sidebar-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========== Glass Morphism Utility ========== */
+.glass {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+}
+
+.glass-light {
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+}
+
+/* ========== Honeycomb Pattern Background ========== */
+.honeycomb-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%23167f3c' stroke-opacity='0.06' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%23167f3c' stroke-opacity='0.06' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+.dark .honeycomb-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 100' fill='none' stroke='%2322c55e' stroke-opacity='0.04' stroke-width='1'/%3E%3Cpath d='M28 0L28 34L0 50L0 84L28 100L56 84L56 50L28 34' fill='none' stroke='%2322c55e' stroke-opacity='0.04' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+/* ========== Animated Gradient Border ========== */
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.animated-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* ========== Command Palette Overlay ========== */
+.cmd-overlay {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ========== Focus Ring Animation ========== */
+.focus-ring-brand:focus-visible {
+  outline: 2px solid oklch(0.44 0.125 146);
+  outline-offset: 2px;
+}
+
+.dark .focus-ring-brand:focus-visible {
+  outline-color: oklch(0.63 0.13 146);
+}
+
+/* Fond global discret (champs / miel) — charte AgriBio */
+.agribio-app-bg {
+  background-image:
+    radial-gradient(ellipse 120% 80% at 100% 0%, oklch(0.92 0.04 102 / 0.35), transparent 50%),
+    radial-gradient(ellipse 90% 60% at 0% 100%, oklch(0.55 0.08 146 / 0.06), transparent 45%);
+}
+
+.dark .agribio-app-bg {
+  background-image:
+    radial-gradient(ellipse 120% 80% at 100% 0%, oklch(0.35 0.06 102 / 0.2), transparent 50%),
+    radial-gradient(ellipse 90% 60% at 0% 100%, oklch(0.4 0.08 146 / 0.12), transparent 45%);
+}
+
+/* ========== Selection Color ========== */
+::selection {
+  background: oklch(0.44 0.125 146 / 0.28);
+  color: inherit;
+}
+
+.dark ::selection {
+  background: oklch(0.63 0.13 146 / 0.35);
+}
+
+/* Encoches / indicateur d’accueil — utilitaires optionnels pour le contenu plein écran */
+.pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+.pt-safe {
+  padding-top: max(0.25rem, env(safe-area-inset-top, 0px));
+}
