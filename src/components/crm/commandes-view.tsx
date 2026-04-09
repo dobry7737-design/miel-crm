@@ -52,6 +52,7 @@ type CommandeFormState = {
   prix: string
   statut: Commande['statut']
   commercial: string
+  date: string
 }
 
 function fmt(n: number) { return n.toLocaleString('fr-FR') + ' FCFA' }
@@ -113,6 +114,7 @@ const emptyForm = (): CommandeFormState => ({
   prix: '',
   statut: 'EN_ATTENTE',
   commercial: 'Amadou Diallo',
+  date: format(new Date(), 'yyyy-MM-dd'),
 })
 
 export function CommandesView() {
@@ -146,6 +148,20 @@ export function CommandesView() {
     window.addEventListener(CRM_DATA_CHANGED_EVENT, bump)
     return () => window.removeEventListener(CRM_DATA_CHANGED_EVENT, bump)
   }, [])
+
+  // Auto-open new commande dialog if requested by dashboard
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('fab-auto-open-dialog') === 'commande') {
+      sessionStorage.removeItem('fab-auto-open-dialog')
+      if (canModifyCommandes) {
+        setTimeout(() => {
+          setEditMode(false)
+          setForm(emptyForm())
+          setDialogOpen(true)
+        }, 150)
+      }
+    }
+  }, [canModifyCommandes])
 
   const loadData = useCallback(() => {
     setCommandes(getCommandes())
@@ -220,6 +236,7 @@ export function CommandesView() {
     setForm({
       ...emptyForm(),
       commercial: isDirectorOrAdmin ? (commercialNames[0] || 'Amadou Diallo') : dataUserName,
+      date: format(new Date(), 'yyyy-MM-dd'),
     })
     setEditMode(false)
     setEditId(null)
@@ -233,6 +250,7 @@ export function CommandesView() {
       prix: String(cmd.prix),
       statut: cmd.statut,
       commercial: cmd.commercial,
+      date: cmd.date ? format(new Date(cmd.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
     })
     setEditMode(true)
     setEditId(cmd.id)
@@ -267,6 +285,7 @@ export function CommandesView() {
           montant: qty * prix,
           statut: form.statut,
           commercial,
+          date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
         })
         if (updated) toast({ title: 'Succès', description: 'Commande modifiée' })
       } else {
@@ -277,7 +296,7 @@ export function CommandesView() {
           prix,
           montant: qty * prix,
           statut: form.statut,
-          date: new Date().toISOString(),
+          date: form.date ? new Date(form.date).toISOString() : new Date().toISOString(),
         })
         toast({ title: 'Succès', description: 'Commande créée' })
       }
@@ -811,6 +830,15 @@ export function CommandesView() {
                   <SelectItem value="ANNULEE">{COMMANDE_STATUT_LABEL.ANNULEE}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Date de commande</Label>
+              <Input
+                type="date"
+                className="h-10 rounded-lg"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+              />
             </div>
           </div>
           <DialogFooter className="shrink-0 gap-2 border-t border-border/80 bg-muted/25 px-6 py-3 sm:flex-row sm:gap-2 sm:px-6 sm:py-4">

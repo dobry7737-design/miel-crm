@@ -147,9 +147,9 @@ function getGreeting(): { text: string; icon: React.ElementType } {
   return { text: 'Bonsoir', icon: Moon }
 }
 
-const WELCOME_QUICK_ACTIONS: { label: string; icon: React.ElementType; view: AppView; color: string }[] = [
-  { label: 'Nouveau client', icon: UserPlus, view: 'clients', color: 'bg-emerald-500 hover:bg-emerald-600' },
-  { label: 'Nouvelle commande', icon: Plus, view: 'commandes', color: 'bg-primary hover:bg-primary/90' },
+const WELCOME_QUICK_ACTIONS: { label: string; icon: React.ElementType; view: AppView; color: string; autoOpen?: string }[] = [
+  { label: 'Nouveau client', icon: UserPlus, view: 'clients', color: 'bg-emerald-500 hover:bg-emerald-600', autoOpen: 'client' },
+  { label: 'Nouvelle commande', icon: Plus, view: 'commandes', color: 'bg-primary hover:bg-primary/90', autoOpen: 'commande' },
   { label: 'Voir rapports', icon: BarChart3, view: 'rapports', color: 'bg-violet-500 hover:bg-violet-600' },
 ]
 
@@ -214,7 +214,10 @@ const WelcomeBanner = memo(function WelcomeBanner({
                   key={action.label}
                   size="sm"
                   className={`${action.color} text-white shadow-lg shadow-black/10 transition-all hover:shadow-xl hover:-translate-y-0.5`}
-                  onClick={() => onNavigate?.(action.view)}
+                  onClick={() => {
+                    if (action.autoOpen) sessionStorage.setItem('fab-auto-open-dialog', action.autoOpen)
+                    onNavigate?.(action.view)
+                  }}
                 >
                   <action.icon className="h-4 w-4 mr-1.5" />
                   {action.label}

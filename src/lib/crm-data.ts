@@ -147,6 +147,9 @@ export function getRegions(): string[] {
 
 export function getUniqueCommercialNames(): string[] {
   const s = new Set<string>()
+  // Include all active sales reps first
+  getSalesReps().forEach((r) => s.add(r.name))
+  // Also include any legacy references in orders and clients
   getCommandes().forEach((c) => s.add(c.commercial))
   getClients().forEach((c) => s.add(c.commercial))
   return [...s].sort((a, b) => a.localeCompare(b, 'fr'))

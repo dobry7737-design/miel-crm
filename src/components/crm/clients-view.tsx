@@ -142,6 +142,17 @@ export function ClientsView() {
 
   const canUseClientForms = canModifyData || effectiveRole === 'COMMERCIAL'
 
+  // Auto-open new client dialog if requested by dashboard
+  useEffect(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('fab-auto-open-dialog') === 'client') {
+      sessionStorage.removeItem('fab-auto-open-dialog')
+      if (canUseClientForms) {
+        // Need brief delay to ensure UI mounts and initial states process
+        setTimeout(() => openAdd(), 150)
+      }
+    }
+  }, [canUseClientForms])
+
   const rows: ClientRow[] = useMemo(() => {
     const cmds = getCommandes()
     const byName = new Map<string, { n: number; tot: number }>()
