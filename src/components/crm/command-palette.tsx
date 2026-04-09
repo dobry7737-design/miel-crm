@@ -22,6 +22,7 @@ import {
   Keyboard,
   Search,
   UserCog,
+  Trophy,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { getPaletteOpenKbdLabel } from '@/lib/kbd-shortcut-label'
@@ -129,6 +130,17 @@ export function CommandPalette({ onNavigate, onNewClient, onNewCommande }: Comma
             category: 'Navigation' as const,
             action: () => onNavigate('equipe'),
             shortcut: 'G E',
+          }]
+        : []),
+      ...(canAccessCrmView(role, 'top-commerciaux')
+        ? [{
+            id: 'nav-top',
+            label: 'Top Commerciaux',
+            description: 'Classement du chiffre d\'affaires',
+            icon: Trophy,
+            category: 'Navigation' as const,
+            action: () => onNavigate('top-commerciaux'),
+            shortcut: 'G T',
           }]
         : []),
       {

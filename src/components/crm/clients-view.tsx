@@ -266,7 +266,7 @@ export function ClientsView() {
     router.push(pathForClientHistory(c.id))
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.name.trim() || !form.phone.trim()) {
       toast({ title: 'Erreur', description: 'Nom et téléphone sont requis', variant: 'destructive' })
       return
@@ -279,9 +279,9 @@ export function ClientsView() {
       return
     }
     setIsSubmitting(true)
-    setTimeout(() => {
+    try {
       if (editMode && editId) {
-        const updated = updateClient(editId, {
+        const updated = await updateClient(editId, {
           name: form.name.trim(),
           phone: form.phone.trim(),
           email: form.email.trim(),
@@ -291,7 +291,7 @@ export function ClientsView() {
         })
         if (updated) toast({ title: 'Succès', description: `${updated.name} a été modifié` })
       } else {
-        const created = addClient({
+        const created = await addClient({
           name: form.name.trim(),
           phone: form.phone.trim(),
           email: form.email.trim(),
@@ -304,17 +304,25 @@ export function ClientsView() {
       loadClients()
       setDialogOpen(false)
       setForm(emptyForm)
+    } catch (error: any) {
+      toast({ title: 'Erreur', description: error.message || 'Erreur lors de la sauvegarde', variant: 'destructive' })
+    } finally {
       setIsSubmitting(false)
-    }, 400)
+    }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteDialog) return
     const client = clients.find((c) => c.id === deleteDialog)
-    deleteClient(deleteDialog)
-    loadClients()
-    setDeleteDialog(null)
-    toast({ title: 'Supprimé', description: `${client?.name || 'Client'} a été supprimé` })
+    try {
+      await deleteClient(deleteDialog)
+      loadClients()
+      toast({ title: 'Supprimé', description: `${client?.name || 'Client'} a été supprimé` })
+    } catch (error: any) {
+      toast({ title: 'Erreur', description: error.message || 'Erreur lors de la suppression', variant: 'destructive' })
+    } finally {
+      setDeleteDialog(null)
+    }
   }
 
   return (

@@ -58,6 +58,7 @@ import {
 } from '@/lib/crm-data'
 import { BRAND_GREEN, BRAND_GREEN_SOFT } from '@/lib/chart-colors'
 import { COMMANDE_STATUT_LABEL } from '@/lib/permissions'
+import { getRoleLabel } from '@/lib/demo-users'
 import { DataTablePagination } from '@/components/crm/data-table/data-table-pagination'
 import {
   DropdownMenu,
@@ -712,7 +713,7 @@ export function EquipeCommercialeView() {
         ventes,
         nbClients,
         email: r.email?.trim() || demoEmailFromName(r.name),
-        roleLabel: r.role?.trim() || 'Commercial',
+        roleLabel: r.role ? getRoleLabel(r.role as 'COMMERCIAL' | 'RESP_COMMERCIAL') : 'Commercial',
         accentHex: normalizeHexColor(r.accentColor) ?? accentHexForRep(r.id),
         tachesCount,
         activitesLine,
@@ -807,7 +808,7 @@ export function EquipeCommercialeView() {
       return
     }
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       const text = String(reader.result || '')
       const parsed = parseTeamImportCsv(text)
       if (parsed.length === 0) {
@@ -827,22 +828,26 @@ export function EquipeCommercialeView() {
           skipped++
           continue
         }
-        addSalesRep({
-          name: row.name,
-          zone: row.zone,
-          phone: row.phone,
-          avatarInitials: row.avatarInitials,
-          photoUrl: row.photoUrl,
-          objectif: row.objectif,
-          clientIds: [],
-          email: row.email,
-          role: row.role,
-          accentColor: row.accentColor,
-          tachesEnCours: row.tachesEnCours,
-          activitesCommerciales: row.activitesCommerciales,
-        })
+        try {
+          await addSalesRep({
+            name: row.name,
+            zone: row.zone,
+            phone: row.phone,
+            avatarInitials: row.avatarInitials,
+            photoUrl: row.photoUrl,
+            objectif: row.objectif,
+            clientIds: [],
+            email: row.email,
+            role: row.role,
+            accentColor: row.accentColor,
+            tachesEnCours: row.tachesEnCours,
+            activitesCommerciales: row.activitesCommerciales,
+          })
+          added++
+        } catch(err) {
+          console.error("Failed to add sales rep", row, err)
+        }
         existing.add(key)
-        added++
       }
       setVersion((v) => v + 1)
       toast({
@@ -887,9 +892,10 @@ export function EquipeCommercialeView() {
     setFormOpen(true)
   }
 
-  const saveRep = () => {
+  const saveRep = async () => {
     const obj = parseInt(String(form.objectif).replace(/\s/g, ''), 10)
-    if (!form.name.trim() || !form.zone.trim() || !form.phone.trim()) {
+    const phoneNorm = form.phone.trim().replace(/\s+/g, '').replace(/^(\+223|00223|\+221|00221)/, '')
+    if (!form.name.trim() || !form.zone.trim() || !phoneNorm) {
       toast({ title: 'Champs requis', description: 'Nom, zone et téléphone sont obligatoires', variant: 'destructive' })
       return
     }
@@ -918,42 +924,46 @@ export function EquipeCommercialeView() {
     const email = form.email.trim() || undefined
     const role = form.role.trim() || undefined
     const activitesCommerciales = form.activitesCommerciales.trim() || undefined
-    if (editId) {
-      updateSalesRep(editId, {
-        name: form.name.trim(),
-        zone: form.zone.trim(),
-        phone: form.phone.trim(),
-        avatarInitials: initials,
-        photoUrl: form.photoUrl.trim() || undefined,
-        objectif: obj,
-        clientIds,
-        email,
-        role,
-        accentColor: hex,
-        tachesEnCours,
-        activitesCommerciales,
-      })
-      toast({ title: 'Commercial mis à jour' })
-    } else {
-      addSalesRep({
-        name: form.name.trim(),
-        zone: form.zone.trim(),
-        phone: form.phone.trim(),
-        avatarInitials: initials,
-        photoUrl: form.photoUrl.trim() || undefined,
-        objectif: obj,
-        clientIds,
-        email,
-        role,
-        accentColor: hex,
-        tachesEnCours,
-        activitesCommerciales,
-      })
-      toast({ title: 'Commercial ajouté' })
+    try {
+      if (editId) {
+        await updateSalesRep(editId, {
+          name: form.name.trim(),
+          zone: form.zone.trim(),
+          phone: form.phone.trim(),
+          avatarInitials: initials,
+          photoUrl: form.photoUrl.trim() || undefined,
+          objectif: obj,
+          clientIds,
+          email,
+          role,
+          accentColor: hex,
+          tachesEnCours,
+          activitesCommerciales,
+        })
+        toast({ title: 'Commercial mis à jour' })
+      } else {
+        await addSalesRep({
+          name: form.name.trim(),
+          zone: form.zone.trim(),
+          phone: form.phone.trim(),
+          avatarInitials: initials,
+          photoUrl: form.photoUrl.trim() || undefined,
+          objectif: obj,
+          clientIds,
+          email,
+          role,
+          accentColor: hex,
+          tachesEnCours,
+          activitesCommerciales,
+        })
+        toast({ title: 'Commercial ajouté' })
+      }
+      setVersion((v) => v + 1)
+      setFormOpen(false)
+      setForm(emptyForm)
+    } catch(err: any) {
+      toast({ title: 'Erreur', description: err.message || 'Action impossible', variant: 'destructive' })
     }
-    setVersion((v) => v + 1)
-    setFormOpen(false)
-    setForm(emptyForm)
   }
 
   const deleteTargetRep = useMemo(
@@ -961,12 +971,16 @@ export function EquipeCommercialeView() {
     [deleteId, version],
   )
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!deleteId) return
-    deleteSalesRep(deleteId)
-    setDeleteId(null)
-    setVersion((v) => v + 1)
-    toast({ title: 'Commercial supprimé' })
+    try {
+      await deleteSalesRep(deleteId)
+      setDeleteId(null)
+      setVersion((v) => v + 1)
+      toast({ title: 'Commercial supprimé' })
+    } catch(err: any) {
+      toast({ title: 'Erreur', description: 'Impossible de supprimer', variant: 'destructive' })
+    }
   }
 
   return (
@@ -1854,12 +1868,18 @@ export function EquipeCommercialeView() {
                   </div>
                   <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-xs font-medium">Rôle affiché</Label>
-                    <Input
-                      className="h-11 rounded-xl border-primary/15 shadow-sm focus-visible:border-primary/40 focus-visible:ring-primary/15"
-                      value={form.role}
-                      onChange={(e) => setForm({ ...form, role: e.target.value })}
-                      placeholder="Ex. Commercial senior"
-                    />
+                    <Select
+                      value={form.role || 'COMMERCIAL'}
+                      onValueChange={(val) => setForm({ ...form, role: val })}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl border-primary/15 shadow-sm focus-visible:border-primary/40 focus-visible:ring-primary/15">
+                        <SelectValue placeholder="Sélectionnez un rôle" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="COMMERCIAL">Commercial</SelectItem>
+                        <SelectItem value="RESP_COMMERCIAL">Responsable Commercial</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium">Couleur (#RRVVBB)</Label>
@@ -2092,7 +2112,7 @@ function PerformanceSheetInner({ rep, onClose }: { rep: SalesRep; onClose: () =>
       .map((c) => ({ id: c.id, name: c.name }))
     const nbClients = clients.length
     const emailDisplay = rep.email?.trim() || demoEmailFromName(rep.name)
-    const roleLabel = rep.role?.trim() || 'Commercial'
+    const roleLabel = rep.role ? getRoleLabel(rep.role as 'COMMERCIAL' | 'RESP_COMMERCIAL') : 'Commercial'
     const accentHex = normalizeHexColor(rep.accentColor) ?? accentHexForRep(rep.id)
     const tachesCount =
       typeof rep.tachesEnCours === 'number' && Number.isFinite(rep.tachesEnCours) && rep.tachesEnCours >= 0

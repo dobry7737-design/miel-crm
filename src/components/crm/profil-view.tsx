@@ -253,12 +253,17 @@ export function ProfilView({
     setTimeout(() => handleExportCommandes(), 300)
   }
 
-  const handleReset = () => {
-    resetData()
-    setResetDialog(false)
-    localStorage.removeItem('fab_last_export')
-    setLastExport(null)
-    toast({ title: 'Données réinitialisées', description: 'Toutes les données ont été restaurées aux valeurs par défaut' })
+  const handleReset = async () => {
+    try {
+      await resetData()
+      setResetDialog(false)
+      localStorage.removeItem('fab_last_export')
+      setLastExport(null)
+      toast({ title: 'Données réinitialisées', description: 'Toutes les données ont été restaurées aux valeurs par défaut' })
+    } catch (err: any) {
+      toast({ title: 'Erreur', description: err.message || 'Erreur lors de la réinitialisation', variant: 'destructive' })
+      setResetDialog(false)
+    }
   }
 
   return (

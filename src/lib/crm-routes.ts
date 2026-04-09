@@ -1,10 +1,10 @@
 import { canAddClient, canModifyData, canViewTeam } from '@/lib/auth-policy'
 
-export type AppView = 'dashboard' | 'clients' | 'commandes' | 'rapports' | 'equipe' | 'profil'
+export type AppView = 'dashboard' | 'clients' | 'commandes' | 'rapports' | 'equipe' | 'profil' | 'top-commerciaux'
 
 /**
  * Onglets CRM visibles (sidebar, palette, navigation).
- * Commercial : dashboard, clients, équipe (annuaire lecture seule), profil.
+ * Commercial : dashboard, clients, profil.
  * Commandes / rapports : DG & Admin (canModifyData). Édition équipe : DG & Admin.
  */
 export function canAccessCrmView(role: string | undefined, view: AppView): boolean {
@@ -20,6 +20,8 @@ export function canAccessCrmView(role: string | undefined, view: AppView): boole
       return canModifyData(role)
     case 'equipe':
       return canViewTeam(role)
+    case 'top-commerciaux':
+      return role === 'DG' || role === 'ADMIN' // explicit inline auth or `canViewTopCommercials(role)`
     case 'profil':
       return true
     default:
@@ -33,6 +35,7 @@ export const CRM_PATH: Record<AppView, string> = {
   commandes: '/crm/commandes',
   rapports: '/crm/rapports',
   equipe: '/crm/equipe',
+  'top-commerciaux': '/crm/top-commerciaux',
   profil: '/crm/profil',
 }
 
@@ -45,12 +48,12 @@ export function pathForClientHistory(clientId: string): string {
   return `/crm/clients/${encodeURIComponent(clientId)}/historique`
 }
 
-/** Déduit la vue active depuis l’URL (préfixe le plus long en premier). */
 export function viewFromPathname(pathname: string): AppView {
   if (pathname.startsWith('/crm/clients')) return 'clients'
   if (pathname.startsWith('/crm/commandes')) return 'commandes'
   if (pathname.startsWith('/crm/rapports')) return 'rapports'
   if (pathname.startsWith('/crm/equipe')) return 'equipe'
+  if (pathname.startsWith('/crm/top-commerciaux')) return 'top-commerciaux'
   if (pathname.startsWith('/crm/profil')) return 'profil'
   return 'dashboard'
 }

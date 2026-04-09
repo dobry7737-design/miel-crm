@@ -12,12 +12,17 @@
  */
 
 export function isFullDataAccess(role: string | undefined): boolean {
-  return role === 'DG' || role === 'ADMIN'
+  return role === 'DG' || role === 'ADMIN' || role === 'RESP_COMMERCIAL'
 }
 
-/** Annuaire équipe : tous les rôles connectés ; édition réservée à canModifyData (DG / Admin). */
+/** Annuaire équipe : tous les rôles connectés ; édition réservée à canModifyData (DG / Admin / Responsable). */
 export function canViewTeam(role: string | undefined): boolean {
-  return role === 'DG' || role === 'ADMIN' || role === 'COMMERCIAL'
+  return role === 'DG' || role === 'ADMIN' || role === 'RESP_COMMERCIAL'
+}
+
+/** Leaderboard : Écran "Top Commerciaux" réservé exclusivement au Directeur Général et Admin Système */
+export function canViewTopCommercials(role: string | undefined): boolean {
+  return role === 'DG' || role === 'ADMIN'
 }
 
 /** Commandes, équipe (hors portefeuille client), paramètres sensibles */
@@ -41,9 +46,9 @@ export function canAddClient(_role: string | undefined): boolean {
   return true
 }
 
-/** Simulation de rôle : réservé au compte réel DG/Admin */
+/** Simulation de rôle : réservé au compte réel DG/Admin/Resp */
 export function canAccessRoleSimulation(accountRole: string | undefined): boolean {
-  return accountRole === 'DG' || accountRole === 'ADMIN'
+  return accountRole === 'DG' || accountRole === 'ADMIN' || accountRole === 'RESP_COMMERCIAL'
 }
 
 /**
@@ -63,5 +68,6 @@ export function canEditClientRow(
 }
 
 export function isCommercialRole(role: string | undefined): boolean {
+  // Un responsable commercial n'est pas un commercial de base, il voit tout (isFullDataAccess = true)
   return role === 'COMMERCIAL'
 }

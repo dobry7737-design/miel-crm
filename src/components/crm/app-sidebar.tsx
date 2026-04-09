@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { LayoutDashboard, Users, ShoppingCart, BarChart3, Settings, LogOut, UserCog } from 'lucide-react'
+import { LayoutDashboard, Users, ShoppingCart, BarChart3, Settings, LogOut, UserCog, Trophy } from 'lucide-react'
 import { BrandLogo } from '@/components/crm/brand-logo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,7 @@ const baseNavItems: { view: AppView; label: string; icon: React.ElementType }[] 
   { view: 'commandes', label: 'Commandes', icon: ShoppingCart },
   { view: 'rapports', label: 'Rapports', icon: BarChart3 },
   { view: 'equipe', label: 'Équipe commerciale', icon: UserCog },
+  { view: 'top-commerciaux', label: 'Top Commerciaux', icon: Trophy },
   { view: 'profil', label: 'Paramètres', icon: Settings },
 ]
 

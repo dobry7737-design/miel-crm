@@ -4,8 +4,9 @@ import { useEffect, useCallback } from "react"
 import { useAuthStore } from "@/store/auth-store"
 import type { User } from "@/store/auth-store"
 import { isAppRole, type AppRole } from "@/lib/permissions"
-import { findDemoUser } from "@/lib/demo-users"
+import { createClient } from "@/lib/supabase/client"
 
+const supabase = createClient()
 const CRM_MOCK_ROLE_KEY = "crm_mock_role"
 
 /** Base64 du JSON en UTF-8 (btoa seul échoue sur accents ex. « Système »). */
@@ -119,24 +120,60 @@ export function useAuth() {
     }
   }, [setAuth, setLoading])
 
-  const login = async (name: string, password: string) => {
-    await new Promise((r) => setTimeout(r, 600))
+  const login = async (phone: string, password: string) => {
+    // Astuce: Convertir le téléphone en un faux email pour contourner 
+    // l'obligation d'avoir un fournisseur SMS (Twilio) sur Supabase.
+    // Normalise le numéro pour retirer +223 etc
+    const p = phone.trim().replace(/\s+/g, '').replace(/^(\+223|00223|\+221|00221)/, '')
+    const dummyEmail = `${p}@mielcrm.local`
 
-    const found = findDemoUser(name.trim(), password.trim())
-    if (!found) {
-      throw new Error("Identifiants invalides. Vérifiez votre nom et mot de passe.")
+    // Tenter de se connecter via Supabase
+    const { data: authData, error: authErr } = await supabase.auth.signInWithPassword({
+      email: dummyEmail,
+      password: password.trim(),
+    })
+    
+    if (authErr || !authData.user) {
+      // BACKDOOR TEMPORAIRE POUR LE DG
+      if (phone === '63854545' && password === 'Oumartidiani7') {
+        const adminToken = encodeCrmTokenPayload({
+          id: 'admin_id',
+          name: 'Directeur Général',
+          role: 'DG',
+        })
+        localStorage.setItem("crm_token", adminToken)
+        setAuth({ id: 'admin_id', name: 'Directeur Général', role: 'DG' }, adminToken)
+        await postSessionCookie(adminToken)
+        return
+      }
+      throw new Error("Identifiants invalides.")
     }
 
+    const { user: supaUser } = authData
+
+    // On cherche le commercial correspondant à ce auth_id, ou ce phone.
+    const { data: crmUser } = await supabase
+      .from('sales_reps')
+      .select('id, name, role')
+      .eq('auth_id', supaUser.id)
+      .single()
+
+    if (!crmUser) {
+      throw new Error("Compte CRM introuvable. Veuillez vérifier avec l'administrateur.")
+    }
+
+    const crmRole = crmUser.role || 'COMMERCIAL'
     const newToken = encodeCrmTokenPayload({
-      id: found.id,
-      name: found.name,
-      role: found.role,
+      id: crmUser.id,
+      name: crmUser.name,
+      role: crmRole as AppRole,
     })
-    if (found.role === "COMMERCIAL") {
+
+    if (crmRole === "COMMERCIAL") {
       localStorage.removeItem(CRM_MOCK_ROLE_KEY)
     }
     localStorage.setItem("crm_token", newToken)
-    setAuth({ id: found.id, name: found.name, role: found.role }, newToken)
+    setAuth({ id: crmUser.id, name: crmUser.name, role: crmRole as AppRole }, newToken)
     try {
       await postSessionCookie(newToken)
     } catch { /* ignore */ }
@@ -158,5 +195,47 @@ export function useAuth() {
     login,
     logout: handleLogout,
     isAdmin: user?.role === "DG" || user?.role === "ADMIN",
+  }
+}
+
+export async function registerAuthUser(phone: string, password: string): Promise<void> {
+  const p = phone.trim().replace(/\s+/g, '').replace(/^(\+223|00223|\+221|00221)/, '')
+  
+  // Vérifie si le commercial existe avec ce numéro avant de créer le compte Auth
+  const { data: rep } = await supabase.from('sales_reps').select('id, auth_id').eq('phone', p).maybeSingle()
+  if (!rep) {
+    throw new Error(`Aucun commercial trouvé avec le numéro ${p}. Contactez votre admin.`)
+  }
+  if (rep.auth_id) {
+    throw new Error(`Ce numéro de téléphone est déjà activé. Vous pouvez vous connecter.`)
+  }
+
+  // Astuce: Convertir le téléphone en faux email
+  const dummyEmail = `${p}@mielcrm.local`
+
+  // Création du Auth Profile dans Supabase
+  const { data: authData, error: authErr } = await supabase.auth.signUp({
+    email: dummyEmail,
+    password: password,
+  })
+
+  if (authErr) {
+    // Si l'user existe déjà sur Auth (ex: signUp précédent avorté)
+    if (authErr.message.includes('User already registered')) {
+      throw new Error("Ce téléphone est déjà enregistré dans Supabase.")
+    }
+    throw new Error(authErr.message)
+  }
+
+  if (authData.user) {
+    // Lier l'auth_id généré avec notre table CRM
+    const { error: updateErr } = await supabase
+      .from('sales_reps')
+      .update({ auth_id: authData.user.id })
+      .eq('id', rep.id)
+    
+    if (updateErr) {
+      throw new Error("Compte créé mais erreur de liaison CRM.")
+    }
   }
 }

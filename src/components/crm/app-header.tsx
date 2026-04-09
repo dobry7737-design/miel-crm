@@ -164,8 +164,8 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
     return { view: 'dashboard' as const, label: 'Tableau de bord' }
   }, [roleForAccess])
 
-  const handleNotifClick = (notif: Notification) => {
-    markAsRead(notif.id)
+  const handleNotifClick = async (notif: Notification) => {
+    await markAsRead(notif.id)
     loadNotifications()
     if (notif.link && onNavigate) {
       const r = effectiveRole || undefined
@@ -183,14 +183,14 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
     }
   }
 
-  const handleMarkAllRead = () => {
-    markAllRead()
+  const handleMarkAllRead = async () => {
+    await markAllRead()
     loadNotifications()
   }
 
-  const handleClearNotif = (id: string, e: React.MouseEvent) => {
+  const handleClearNotif = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    clearNotification(id)
+    await clearNotification(id)
     loadNotifications()
   }
 

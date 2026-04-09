@@ -239,7 +239,7 @@ export function CommandesView() {
     setDialogOpen(true)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!form.client || !form.qty || !form.prix) {
       toast({ title: 'Erreur', description: 'Client, quantité et prix sont requis', variant: 'destructive' })
       return
@@ -258,9 +258,9 @@ export function CommandesView() {
     const commercial = isDirectorOrAdmin ? form.commercial : dataUserName
 
     setIsSubmitting(true)
-    setTimeout(() => {
+    try {
       if (editMode && editId) {
-        const updated = updateCommande(editId, {
+        const updated = await updateCommande(editId, {
           client: form.client,
           qty,
           prix,
@@ -270,7 +270,7 @@ export function CommandesView() {
         })
         if (updated) toast({ title: 'Succès', description: 'Commande modifiée' })
       } else {
-        addCommande({
+        await addCommande({
           client: form.client,
           commercial,
           qty,
@@ -284,28 +284,40 @@ export function CommandesView() {
       loadData()
       setDialogOpen(false)
       setForm(emptyForm())
+    } catch (error: any) {
+      toast({ title: 'Erreur', description: error.message || 'Erreur lors de la sauvegarde', variant: 'destructive' })
+    } finally {
       setIsSubmitting(false)
-    }, 400)
-  }
-
-  const handleStatusChange = (id: string, newStatus: string) => {
-    const updated = updateCommande(id, { statut: newStatus as Commande['statut'] })
-    if (updated) {
-      loadData()
-      toast({
-        title: 'Statut modifié',
-        description: `Commande passée à « ${COMMANDE_STATUT_LABEL[newStatus] || newStatus} »`,
-      })
     }
   }
 
-  const handleDelete = () => {
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      const updated = await updateCommande(id, { statut: newStatus as Commande['statut'] })
+      if (updated) {
+        loadData()
+        toast({
+          title: 'Statut modifié',
+          description: `Commande passée à « ${COMMANDE_STATUT_LABEL[newStatus] || newStatus} »`,
+        })
+      }
+    } catch (error: any) {
+      toast({ title: 'Erreur', description: error.message || 'Erreur lors de la mise à jour du statut', variant: 'destructive' })
+    }
+  }
+
+  const handleDelete = async () => {
     if (!deleteDialog) return
     const cmd = commandes.find((c) => c.id === deleteDialog)
-    deleteCommande(deleteDialog)
-    loadData()
-    setDeleteDialog(null)
-    toast({ title: 'Supprimée', description: `Commande de ${cmd?.client || ''} supprimée` })
+    try {
+      await deleteCommande(deleteDialog)
+      loadData()
+      toast({ title: 'Supprimée', description: `Commande de ${cmd?.client || ''} supprimée` })
+    } catch (error: any) {
+      toast({ title: 'Erreur', description: error.message || 'Erreur lors de la suppression', variant: 'destructive' })
+    } finally {
+      setDeleteDialog(null)
+    }
   }
 
   const counts = {

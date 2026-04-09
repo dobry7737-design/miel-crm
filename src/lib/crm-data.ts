@@ -1,8 +1,11 @@
 // ========== CRM DATA STORE ==========
-// localStorage-based persistence for demo mode
+// Mixed architecture: Supabase for real backend, localStorage for sync UI cache
 
 import { format, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
+import { createClient } from './supabase/client'
+
+const supabase = createClient()
 
 export interface Client {
   id: string
@@ -10,7 +13,6 @@ export interface Client {
   phone: string
   email: string
   address: string
-  /** Région / zone pour filtres rapports (dérivée de l’adresse si absente) */
   region?: string
   commercial: string
   commandes: number
@@ -34,49 +36,8 @@ export interface Notification {
   message: string
   date: string
   read: boolean
-  link?: 'clients' | 'commandes' | 'dashboard'
+  link?: 'clients' | 'commandes' | 'dashboard' | null
 }
-
-// ========== INITIAL SAMPLE DATA ==========
-
-const INITIAL_CLIENTS: Client[] = [
-  { id: '1', name: 'Hôtel Riviera', phone: '+221 77 123 4567', email: 'contact@riviera.sn', address: 'Corniche Ouest, Dakar', region: 'Dakar', commercial: 'Amadou Diallo', commandes: 3 },
-  { id: '2', name: 'Supermarché Auchan', phone: '+221 78 987 6543', email: 'achats@auchan.sn', address: 'Dakar', region: 'Dakar', commercial: 'Amadou Diallo', commandes: 2 },
-  { id: '3', name: 'Boutique Naturelle', phone: '+221 76 555 1234', email: '', address: 'Thiès', region: 'Thiès', commercial: 'Amadou Diallo', commandes: 1 },
-  { id: '4', name: 'Restaurant Le Saloum', phone: '+221 77 666 7890', email: 'info@lesaloum.sn', address: 'Saint-Louis', region: 'Saint-Louis', commercial: 'Fatou Sy', commandes: 2 },
-  { id: '5', name: 'Pharmacie Centrale', phone: '+221 78 111 2222', email: '', address: 'Plateau, Dakar', region: 'Dakar', commercial: 'Fatou Sy', commandes: 2 },
-  { id: '6', name: 'Épicerie du Coin', phone: '+221 76 333 4444', email: '', address: 'Rufisque', region: 'Périphérie', commercial: 'Fatou Sy', commandes: 1 },
-  { id: '7', name: 'Café Touba Express', phone: '+221 77 444 5555', email: 'cafe@toubaexpress.sn', address: 'Médina, Dakar', region: 'Dakar', commercial: 'Amadou Diallo', commandes: 1 },
-  { id: '8', name: 'Hôtel Terrou-Bi', phone: '+221 78 888 9999', email: 'reservation@terroubi.sn', address: 'Les Almadies, Dakar', region: 'Dakar', commercial: 'Fatou Sy', commandes: 2 },
-]
-
-const now = Date.now()
-const day = 86400000
-
-const INITIAL_COMMANDES: Commande[] = [
-  { id: '1', client: 'Hôtel Terrou-Bi', commercial: 'Fatou Sy', qty: 20, prix: 6000, montant: 120000, statut: 'EN_ATTENTE', date: new Date(now).toISOString() },
-  { id: '2', client: 'Pharmacie Centrale', commercial: 'Fatou Sy', qty: 40, prix: 5200, montant: 208000, statut: 'CONFIRMEE', date: new Date(now - 3 * day).toISOString() },
-  { id: '3', client: 'Hôtel Riviera', commercial: 'Amadou Diallo', qty: 50, prix: 5000, montant: 250000, statut: 'LIVREE', date: new Date(now - 2 * day).toISOString() },
-  { id: '4', client: 'Supermarché Auchan', commercial: 'Amadou Diallo', qty: 100, prix: 4500, montant: 450000, statut: 'CONFIRMEE', date: new Date(now - 5 * day).toISOString() },
-  { id: '5', client: 'Boutique Naturelle', commercial: 'Amadou Diallo', qty: 30, prix: 5500, montant: 165000, statut: 'EN_ATTENTE', date: new Date(now - 1 * day).toISOString() },
-  { id: '6', client: 'Restaurant Le Saloum', commercial: 'Fatou Sy', qty: 35, prix: 5200, montant: 182000, statut: 'ANNULEE', date: new Date(now - 7 * day).toISOString() },
-  { id: '7', client: 'Café Touba Express', commercial: 'Amadou Diallo', qty: 25, prix: 4800, montant: 120000, statut: 'LIVREE', date: new Date(now - 10 * day).toISOString() },
-  { id: '8', client: 'Hôtel Terrou-Bi', commercial: 'Fatou Sy', qty: 150, prix: 4800, montant: 720000, statut: 'LIVREE', date: new Date(now - 15 * day).toISOString() },
-  { id: '9', client: 'Supermarché Auchan', commercial: 'Amadou Diallo', qty: 200, prix: 4300, montant: 860000, statut: 'LIVREE', date: new Date(now - 20 * day).toISOString() },
-  { id: '10', client: 'Hôtel Riviera', commercial: 'Amadou Diallo', qty: 80, prix: 5000, montant: 400000, statut: 'LIVREE', date: new Date(now - 25 * day).toISOString() },
-  { id: '11', client: 'Épicerie du Coin', commercial: 'Fatou Sy', qty: 60, prix: 4700, montant: 282000, statut: 'LIVREE', date: new Date(now - 18 * day).toISOString() },
-  { id: '12', client: 'Hôtel Riviera', commercial: 'Amadou Diallo', qty: 75, prix: 5100, montant: 382500, statut: 'LIVREE', date: new Date(now - 35 * day).toISOString() },
-  { id: '13', client: 'Hôtel Terrou-Bi', commercial: 'Fatou Sy', qty: 100, prix: 4900, montant: 490000, statut: 'LIVREE', date: new Date(now - 40 * day).toISOString() },
-  { id: '14', client: 'Pharmacie Centrale', commercial: 'Fatou Sy', qty: 45, prix: 5500, montant: 247500, statut: 'LIVREE', date: new Date(now - 30 * day).toISOString() },
-]
-
-const INITIAL_NOTIFICATIONS: Notification[] = [
-  { id: 'n1', type: 'warning', title: 'Commande en attente', message: 'Hôtel Terrou-Bi — 20 pots en attente depuis aujourd\'hui', date: new Date(now).toISOString(), read: false, link: 'commandes' },
-  { id: 'n2', type: 'warning', title: 'Commande en attente', message: 'Boutique Naturelle — 30 pots en attente depuis hier', date: new Date(now - day).toISOString(), read: false, link: 'commandes' },
-  { id: 'n3', type: 'success', title: 'Commande livrée', message: 'Hôtel Riviera — 50 pots livrés avec succès', date: new Date(now - 2 * day).toISOString(), read: false, link: 'commandes' },
-  { id: 'n4', type: 'info', title: 'Nouveau client', message: 'Café Touba Express a été ajouté au portefeuille', date: new Date(now - 5 * day).toISOString(), read: true, link: 'clients' },
-  { id: 'n5', type: 'error', title: 'Commande annulée', message: 'Restaurant Le Saloum — commande de 182 000 FCFA annulée', date: new Date(now - 7 * day).toISOString(), read: true, link: 'commandes' },
-]
 
 export interface SalesRep {
   id: string
@@ -84,31 +45,22 @@ export interface SalesRep {
   zone: string
   phone: string
   avatarInitials: string
-  /** URL du portrait (https…). Si absent, un avatar de démo est dérivé de l’id. */
-  photoUrl?: string
-  /** E-mail professionnel (sinon dérivé du nom côté UI) */
-  email?: string
-  /** Libellé métier affiché dans le tableau (ex. Commercial senior) */
-  role?: string
-  /** Couleur d’accentuation (#RRGGBB) ; sinon palette dérivée de l’id côté UI */
-  accentColor?: string
-  /** Tâches en cours (démo) */
-  tachesEnCours?: number
-  /** Résumé des activités commerciales (démo) ; sinon texte dérivé des commandes côté UI */
-  activitesCommerciales?: string
-  /** Objectif annuel indicatif (FCFA) */
+  photoUrl?: string | null
+  email?: string | null
+  role?: string | null
+  accentColor?: string | null
+  tachesEnCours?: number | null
+  activitesCommerciales?: string | null
   objectif: number
   clientIds: string[]
 }
 
-/** Portrait affiché dans l’UI : URL enregistrée ou image de démo stable par id. */
 export function portraitUrlForRep(rep: Pick<SalesRep, 'id' | 'photoUrl'>): string {
   const u = rep.photoUrl?.trim()
   if (u) return u
   return `https://i.pravatar.cc/160?u=${encodeURIComponent(rep.id)}`
 }
 
-/** Aperçu formulaire (création sans id encore : seed par nom). */
 export function portraitUrlForRepDraft(opts: { id?: string; name: string; photoUrl: string }): string {
   const u = opts.photoUrl.trim()
   if (u) return u
@@ -117,36 +69,54 @@ export function portraitUrlForRepDraft(opts: { id?: string; name: string; photoU
   return `https://api.dicebear.com/9.x/notionists/png?seed=${encodeURIComponent(seed)}&size=128`
 }
 
-const INITIAL_SALES_REPS: SalesRep[] = [
-  {
-    id: 'rep-ad',
-    name: 'Amadou Diallo',
-    email: 'amadou.diallo@ferme-agribio.sn',
-    zone: 'Dakar & Ouest',
-    phone: '+221 77 100 2001',
-    avatarInitials: 'AD',
-    role: 'Commercial senior',
-    accentColor: '#8BEBFF',
-    tachesEnCours: 4,
-    activitesCommerciales: '12 visites ce trimestre · 3 devis en cours · relances Dakar',
-    objectif: 5_000_000,
-    clientIds: ['1', '2', '3', '7'],
-  },
-  {
-    id: 'rep-fs',
-    name: 'Fatou Sy',
-    email: 'fatou.sy@ferme-agribio.sn',
-    zone: 'Nord & Thiès',
-    phone: '+221 77 100 2002',
-    avatarInitials: 'FS',
-    role: 'Commercial',
-    accentColor: '#FFCCFF',
-    tachesEnCours: 2,
-    activitesCommerciales: '8 rdv clients · prospection Thiès · salon bio Saint-Louis',
-    objectif: 4_500_000,
-    clientIds: ['4', '5', '6', '8'],
-  },
-]
+// ========== DB MAPPERS ==========
+function mapDbToClient(db: any): Client {
+  return {
+    id: db.id, name: db.name, phone: db.phone, email: db.email || '',
+    address: db.address, region: db.region || '',
+    commercial: db.commercial, commandes: db.commandes_count || 0,
+  }
+}
+
+function mapClientToDb(c: Partial<Client>) {
+  return {
+    id: c.id, name: c.name, phone: c.phone, email: c.email || null,
+    address: c.address, region: c.region || null,
+    commercial: c.commercial, commandes_count: c.commandes
+  }
+}
+
+function mapDbToCommande(db: any): Commande {
+  return {
+    id: db.id, client: db.client_name, commercial: db.commercial,
+    qty: db.qty, prix: db.prix, montant: db.montant,
+    statut: db.statut, date: db.date
+  }
+}
+
+function mapCommandeToDb(c: Partial<Commande>) {
+  return {
+    id: c.id, client_name: c.client, commercial: c.commercial,
+    qty: c.qty, prix: c.prix, montant: c.montant,
+    statut: c.statut, date: c.date ? new Date(c.date).toISOString() : new Date().toISOString()
+  }
+}
+
+function mapDbToNotif(db: any): Notification {
+  return {
+    id: db.id, type: db.type, title: db.title, message: db.message,
+    date: db.date, read: !!db.read, link: db.link || undefined
+  }
+}
+
+function mapDbToSalesRep(db: any): SalesRep {
+  return {
+    id: db.id, name: db.name, zone: db.zone, phone: db.phone,
+    avatarInitials: db.avatar_initials, photoUrl: db.photo_url, email: db.email,
+    role: db.role, accentColor: db.accent_color, tachesEnCours: db.taches_en_cours,
+    activitesCommerciales: db.activites_commerciales, objectif: db.objectif, clientIds: db.client_ids || []
+  }
+}
 
 // ========== STORAGE KEYS ==========
 const KEYS = {
@@ -157,6 +127,7 @@ const KEYS = {
 }
 
 function inferRegionFromAddress(address: string): string {
+  if (!address) return 'Autre'
   const a = address.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   if (a.includes('thies')) return 'Thiès'
   if (a.includes('saint-louis')) return 'Saint-Louis'
@@ -181,7 +152,6 @@ export function getUniqueCommercialNames(): string[] {
   return [...s].sort((a, b) => a.localeCompare(b, 'fr'))
 }
 
-/** IDs des clients dont le champ `commercial` correspond exactement au nom (trim). Utilisé pour l’équipe commerciale. */
 export function getClientIdsForCommercialName(commercialName: string): string[] {
   const n = commercialName.trim()
   if (!n) return []
@@ -194,7 +164,6 @@ function isBrowser(): boolean {
   return typeof window !== 'undefined'
 }
 
-/** Émis sur `window` après chaque écriture CRM dans localStorage (même onglet). `detail.key` = clé stockée ou `*` après reset. */
 export const CRM_DATA_CHANGED_EVENT = 'crm-data-changed' as const
 
 export interface CrmDataChangedDetail {
@@ -228,145 +197,225 @@ function save<T>(key: string, data: T[]): void {
   } catch { /* ignore */ }
 }
 
+// ========== SYNC PUMP ==========
+export async function syncSupabaseData() {
+  if (!isBrowser()) return
+  try {
+    const [cRes, cmdRes, nRes, srRes] = await Promise.all([
+      supabase.from('clients').select('*').order('created_at', { ascending: false }),
+      supabase.from('commandes').select('*').order('date', { ascending: false }),
+      supabase.from('notifications').select('*').order('date', { ascending: false }),
+      supabase.from('sales_reps').select('*')
+    ])
+    
+    if (cRes.data) save(KEYS.clients, cRes.data.map(mapDbToClient))
+    if (cmdRes.data) save(KEYS.commandes, cmdRes.data.map(mapDbToCommande))
+    if (nRes.data) save(KEYS.notifications, nRes.data.map(mapDbToNotif))
+    if (srRes.data) save(KEYS.salesReps, srRes.data.map(mapDbToSalesRep))
+      
+    notifyCrmDataChanged('*')
+  } catch (err) {
+    console.error('Failed to sync with Supabase', err)
+  }
+}
+
 // ========== PUBLIC API ==========
 
 export function getClientNames(): string[] {
-  const clients = load<Client>(KEYS.clients, INITIAL_CLIENTS)
+  const clients = load<Client>(KEYS.clients, [])
   return clients.map(c => c.name)
 }
 
 // --- CLIENTS ---
 export function getClients(): Client[] {
-  return load<Client>(KEYS.clients, INITIAL_CLIENTS)
+  return load<Client>(KEYS.clients, [])
 }
 
-export function addClient(client: Omit<Client, 'id' | 'commandes'>): Client {
+export async function addClient(client: Omit<Client, 'id' | 'commandes'>): Promise<Client> {
+  const newClientData = { ...client, region: client.region?.trim() || inferRegionFromAddress(client.address), commandes: 0 }
+  
+  // Insert into DB
+  const { data: dbClient, error } = await supabase.from('clients').insert(mapClientToDb(newClientData)).select().single()
+  if (error) throw error
+
+  const finalClient = mapDbToClient(dbClient)
   const clients = getClients()
-  const newClient: Client = {
-    ...client,
-    id: String(Date.now()),
-    commandes: 0,
-    region: client.region?.trim() || inferRegionFromAddress(client.address),
-  }
-  clients.unshift(newClient)
+  clients.unshift(finalClient)
   save(KEYS.clients, clients)
-  addNotification('success', 'Nouveau client', `${client.name} a été ajouté au portefeuille`, 'clients')
-  return newClient
+
+  await addNotification('success', 'Nouveau client', `${finalClient.name} a été ajouté au portefeuille`, 'clients')
+  return finalClient
 }
 
-export function updateClient(id: string, updates: Partial<Omit<Client, 'id' | 'commandes'>>): Client | null {
+export async function updateClient(id: string, updates: Partial<Omit<Client, 'id' | 'commandes'>>): Promise<Client | null> {
+  const { data: dbClient, error } = await supabase.from('clients').update(mapClientToDb(updates)).eq('id', id).select().single()
+  if (error) throw error
+
+  const updatedClient = mapDbToClient(dbClient)
   const clients = getClients()
   const idx = clients.findIndex(c => c.id === id)
-  if (idx === -1) return null
-  clients[idx] = { ...clients[idx], ...updates }
-  save(KEYS.clients, clients)
-  return clients[idx]
+  if (idx !== -1) {
+    clients[idx] = updatedClient
+    save(KEYS.clients, clients)
+  }
+  return updatedClient
 }
 
-export function deleteClient(id: string): boolean {
+export async function deleteClient(id: string): Promise<boolean> {
+  const { error } = await supabase.from('clients').delete().eq('id', id)
+  if (error) throw error
+
   const clients = getClients()
-  const filtered = clients.filter(c => c.id !== id)
-  if (filtered.length === clients.length) return false
   const client = clients.find(c => c.id === id)
-  save(KEYS.clients, filtered)
+  save(KEYS.clients, clients.filter(c => c.id !== id))
   if (client) {
-    addNotification('warning', 'Client supprimé', `${client.name} a été retiré du portefeuille`, 'clients')
+    await addNotification('warning', 'Client supprimé', `${client.name} a été retiré du portefeuille`, 'clients')
   }
   return true
 }
 
 // --- COMMANDES ---
 export function getCommandes(): Commande[] {
-  return load<Commande>(KEYS.commandes, INITIAL_COMMANDES)
+  return load<Commande>(KEYS.commandes, [])
 }
 
-export function addCommande(commande: Omit<Commande, 'id'>): Commande {
+export async function addCommande(commande: Omit<Commande, 'id'>): Promise<Commande> {
+  const { data: dbCmd, error } = await supabase.from('commandes').insert(mapCommandeToDb(commande)).select().single()
+  if (error) throw error
+
+  const newCmd = mapDbToCommande(dbCmd)
   const commandes = getCommandes()
-  const newCmd: Commande = { ...commande, id: String(Date.now()) }
   commandes.unshift(newCmd)
   save(KEYS.commandes, commandes)
 
-  // Update client order count
+  // DB Sync Client count - Using RPC or just direct update.
+  // Assuming a direct update for simplicity. Real app uses Supabase Trigger on insert!
   const clients = getClients()
   const clientIdx = clients.findIndex(c => c.name === commande.client)
+  let updatedCount = 1
   if (clientIdx !== -1) {
-    clients[clientIdx].commandes += 1
+    updatedCount = clients[clientIdx].commandes + 1
+    clients[clientIdx].commandes = updatedCount
     save(KEYS.clients, clients)
+    
+    // Also update server side client count
+    await supabase.from('clients').update({ commandes_count: updatedCount }).eq('id', clients[clientIdx].id)
   }
 
   if (commande.statut === 'EN_ATTENTE') {
-    addNotification('warning', 'Commande en attente', `${commande.client} — ${commande.qty} pots en attente`, 'commandes')
+    await addNotification('warning', 'Commande en attente', `${commande.client} — ${commande.qty} pots en attente`, 'commandes')
   } else if (commande.statut === 'LIVREE') {
-    addNotification('success', 'Commande livrée', `${commande.client} — ${commande.qty} pots livrés`, 'commandes')
+    await addNotification('success', 'Commande livrée', `${commande.client} — ${commande.qty} pots livrés`, 'commandes')
   } else {
-    addNotification('info', 'Nouvelle commande', `${commande.client} — ${commande.montant.toLocaleString('fr-FR')} FCFA`, 'commandes')
+    await addNotification('info', 'Nouvelle commande', `${commande.client} — ${commande.montant.toLocaleString('fr-FR')} FCFA`, 'commandes')
   }
 
   return newCmd
 }
 
-export function updateCommande(id: string, updates: Partial<Omit<Commande, 'id'>>): Commande | null {
+export async function updateCommande(id: string, updates: Partial<Omit<Commande, 'id'>>): Promise<Commande | null> {
+  const oldCommandes = getCommandes()
+  const old = oldCommandes.find(c => c.id === id)
+  if (!old) return null
+
+  const { data: dbCmd, error } = await supabase.from('commandes').update(mapCommandeToDb(updates)).eq('id', id).select().single()
+  if (error) throw error
+
+  const newCmd = mapDbToCommande(dbCmd)
   const commandes = getCommandes()
   const idx = commandes.findIndex(c => c.id === id)
-  if (idx === -1) return null
-  const old = commandes[idx]
-  commandes[idx] = { ...old, ...updates }
-  save(KEYS.commandes, commandes)
+  if (idx !== -1) {
+    commandes[idx] = newCmd
+    save(KEYS.commandes, commandes)
+  }
 
   if (updates.statut && updates.statut !== old.statut) {
     const sl: Record<string, string> = { EN_ATTENTE: 'En Attente', CONFIRMEE: 'Confirmée', LIVREE: 'Livrée', ANNULEE: 'Annulée' }
     const type = updates.statut === 'LIVREE' ? 'success' : updates.statut === 'ANNULEE' ? 'error' : updates.statut === 'CONFIRMEE' ? 'info' : 'warning'
-    addNotification(type, `Commande ${sl[updates.statut]}`, `${old.client} — statut mis à jour`, 'commandes')
+    await addNotification(type, `Commande ${sl[updates.statut]}`, `${old.client} — statut mis à jour`, 'commandes')
   }
 
-  return commandes[idx]
+  return newCmd
 }
 
-export function deleteCommande(id: string): boolean {
-  const commandes = getCommandes()
-  const filtered = commandes.filter(c => c.id !== id)
-  if (filtered.length === commandes.length) return false
-  const cmd = commandes.find(c => c.id === id)
-  save(KEYS.commandes, filtered)
+export async function deleteCommande(id: string): Promise<boolean> {
+  const oldCommandes = getCommandes()
+  const cmd = oldCommandes.find(c => c.id === id)
+  
+  const { error } = await supabase.from('commandes').delete().eq('id', id)
+  if (error) throw error
+
+  save(KEYS.commandes, oldCommandes.filter(c => c.id !== id))
+
   if (cmd) {
     const clients = getClients()
     const clientIdx = clients.findIndex(c => c.name === cmd.client)
     if (clientIdx !== -1 && clients[clientIdx].commandes > 0) {
-      clients[clientIdx].commandes -= 1
+      const updatedCount = clients[clientIdx].commandes - 1
+      clients[clientIdx].commandes = updatedCount
       save(KEYS.clients, clients)
+      await supabase.from('clients').update({ commandes_count: updatedCount }).eq('id', clients[clientIdx].id)
     }
-    addNotification('error', 'Commande supprimée', `${cmd.client} — ${cmd.montant.toLocaleString('fr-FR')} FCFA`, 'commandes')
+    await addNotification('error', 'Commande supprimée', `${cmd.client} — ${cmd.montant.toLocaleString('fr-FR')} FCFA`, 'commandes')
   }
   return true
 }
 
-// --- ÉQUIPE COMMERCIALE (mock persisté) ---
+// --- ÉQUIPE COMMERCIALE ---
 export function getSalesReps(): SalesRep[] {
-  return load<SalesRep>(KEYS.salesReps, INITIAL_SALES_REPS)
+  return load<SalesRep>(KEYS.salesReps, [])
 }
 
-export function addSalesRep(rep: Omit<SalesRep, 'id'>): SalesRep {
+export async function addSalesRep(rep: Omit<SalesRep, 'id'>): Promise<SalesRep> {
+  const { data: dbSr, error } = await supabase.from('sales_reps').insert({
+    name: rep.name, email: rep.email, zone: rep.zone, phone: rep.phone, objectif: rep.objectif, // mapping issues handled
+    avatar_initials: rep.avatarInitials, photo_url: rep.photoUrl, role: rep.role, 
+    accent_color: rep.accentColor, taches_en_cours: rep.tachesEnCours,
+    activites_commerciales: rep.activitesCommerciales, client_ids: rep.clientIds
+  }).select().single()
+  if (error) throw error
+
+  const newRep = mapDbToSalesRep(dbSr)
   const list = getSalesReps()
-  const newRep: SalesRep = { ...rep, id: 'sr-' + Date.now() }
   list.unshift(newRep)
   save(KEYS.salesReps, list)
   return newRep
 }
 
-export function updateSalesRep(id: string, updates: Partial<Omit<SalesRep, 'id'>>): SalesRep | null {
+export async function updateSalesRep(id: string, updates: Partial<Omit<SalesRep, 'id'>>): Promise<SalesRep | null> {
+  const toUpdate: any = {}
+  if (updates.name) toUpdate.name = updates.name
+  if (updates.email) toUpdate.email = updates.email
+  if (updates.zone) toUpdate.zone = updates.zone
+  if (updates.phone) toUpdate.phone = updates.phone
+  if (updates.objectif !== undefined) toUpdate.objectif = updates.objectif
+  if (updates.avatarInitials) toUpdate.avatar_initials = updates.avatarInitials
+  if (updates.photoUrl !== undefined) toUpdate.photo_url = updates.photoUrl
+  if (updates.role !== undefined) toUpdate.role = updates.role
+  if (updates.accentColor !== undefined) toUpdate.accent_color = updates.accentColor
+  if (updates.tachesEnCours !== undefined) toUpdate.taches_en_cours = updates.tachesEnCours
+  if (updates.activitesCommerciales !== undefined) toUpdate.activites_commerciales = updates.activitesCommerciales
+  if (updates.clientIds) toUpdate.client_ids = updates.clientIds
+
+  const { data: dbSr, error } = await supabase.from('sales_reps').update(toUpdate).eq('id', id).select().single()
+  if (error) throw error
+
+  const upRep = mapDbToSalesRep(dbSr)
   const list = getSalesReps()
   const idx = list.findIndex(r => r.id === id)
-  if (idx === -1) return null
-  list[idx] = { ...list[idx], ...updates }
-  save(KEYS.salesReps, list)
-  return list[idx]
+  if (idx !== -1) {
+    list[idx] = upRep
+    save(KEYS.salesReps, list)
+  }
+  return upRep
 }
 
-export function deleteSalesRep(id: string): boolean {
+export async function deleteSalesRep(id: string): Promise<boolean> {
+  const { error } = await supabase.from('sales_reps').delete().eq('id', id)
+  if (error) throw error
+
   const list = getSalesReps()
-  const next = list.filter(r => r.id !== id)
-  if (next.length === list.length) return false
-  save(KEYS.salesReps, next)
+  save(KEYS.salesReps, list.filter(r => r.id !== id))
   return true
 }
 
@@ -378,42 +427,49 @@ export function ventesRealiseesForRep(repName: string): number {
 
 // --- NOTIFICATIONS ---
 export function getNotifications(): Notification[] {
-  return load<Notification>(KEYS.notifications, INITIAL_NOTIFICATIONS)
+  return load<Notification>(KEYS.notifications, [])
 }
 
 export function getUnreadCount(): number {
   return getNotifications().filter(n => !n.read).length
 }
 
-export function markAllRead(): void {
+export async function markAllRead(): Promise<void> {
   const notifs = getNotifications()
-  notifs.forEach(n => { n.read = true })
-  save(KEYS.notifications, notifs)
+  const ids = notifs.filter(n => !n.read).map(n => n.id)
+  if (ids.length > 0) {
+    await supabase.from('notifications').update({ read: true }).in('id', ids)
+    notifs.forEach(n => { n.read = true })
+    save(KEYS.notifications, notifs)
+  }
 }
 
-export function markAsRead(id: string): void {
-  const notifs = getNotifications()
-  const n = notifs.find(x => x.id === id)
-  if (n) { n.read = true; save(KEYS.notifications, notifs) }
+export async function markAsRead(id: string): Promise<void> {
+  const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id)
+  if (!error) {
+    const notifs = getNotifications()
+    const n = notifs.find(x => x.id === id)
+    if (n) { n.read = true; save(KEYS.notifications, notifs) }
+  }
 }
 
-export function clearNotification(id: string): void {
-  const notifs = getNotifications()
-  save(KEYS.notifications, notifs.filter(n => n.id !== id))
+export async function clearNotification(id: string): Promise<void> {
+  const { error } = await supabase.from('notifications').delete().eq('id', id)
+  if (!error) {
+    const notifs = getNotifications()
+    save(KEYS.notifications, notifs.filter(n => n.id !== id))
+  }
 }
 
-function addNotification(type: Notification['type'], title: string, message: string, link?: Notification['link']): void {
-  const notifs = getNotifications()
-  notifs.unshift({
-    id: 'n' + Date.now(),
-    type, title, message,
-    date: new Date().toISOString(),
-    read: false,
-    link,
-  })
-  // Keep max 50 notifications
-  if (notifs.length > 50) notifs.length = 50
-  save(KEYS.notifications, notifs)
+export async function addNotification(type: Notification['type'], title: string, message: string, link?: string | null): Promise<void> {
+  const dbPayload = { type, title, message, link: link || null, read: false }
+  const { data: dbNotif, error } = await supabase.from('notifications').insert(dbPayload).select().single()
+  if (!error && dbNotif) {
+    const notifs = getNotifications()
+    notifs.unshift(mapDbToNotif(dbNotif))
+    if (notifs.length > 50) notifs.length = 50
+    save(KEYS.notifications, notifs)
+  }
 }
 
 // --- DASHBOARD STATS ---
@@ -422,7 +478,6 @@ export function getDashboardStats(userRole: string, userName?: string) {
   const clients = getClients()
   const fullAccess = userRole === 'DG' || userRole === 'ADMIN'
 
-  // Role-based filtering
   const userCommandes = fullAccess ? commandes : commandes.filter(c => c.commercial === userName)
   const userClients = fullAccess ? clients : clients.filter(c => c.commercial === userName)
 
@@ -431,7 +486,6 @@ export function getDashboardStats(userRole: string, userName?: string) {
   const totalClients = userClients.length
   const pendingOrders = userCommandes.filter(c => c.statut === 'EN_ATTENTE').length
 
-  // Monthly data (last 6 months) — dynamic month labels
   const now = new Date()
   const monthlyData = Array.from({ length: 6 }, (_, i) => {
     const d = subMonths(now, 5 - i)
@@ -447,7 +501,6 @@ export function getDashboardStats(userRole: string, userName?: string) {
     }
   })
 
-  // Status counts
   const statusCounts = [
     { statut: 'EN_ATTENTE', count: userCommandes.filter(c => c.statut === 'EN_ATTENTE').length, montant: userCommandes.filter(c => c.statut === 'EN_ATTENTE').reduce((s, c) => s + c.montant, 0) },
     { statut: 'CONFIRMEE', count: userCommandes.filter(c => c.statut === 'CONFIRMEE').length, montant: userCommandes.filter(c => c.statut === 'CONFIRMEE').reduce((s, c) => s + c.montant, 0) },
@@ -455,7 +508,6 @@ export function getDashboardStats(userRole: string, userName?: string) {
     { statut: 'ANNULEE', count: userCommandes.filter(c => c.statut === 'ANNULEE').length, montant: userCommandes.filter(c => c.statut === 'ANNULEE').reduce((s, c) => s + c.montant, 0) },
   ]
 
-  // Commercials performance (DG / Admin)
   const commercials = fullAccess ? ['Amadou Diallo', 'Fatou Sy'].map(name => {
     const cCmds = commandes.filter(c => c.commercial === name)
     const cClients = clients.filter(c => c.commercial === name)
@@ -468,7 +520,6 @@ export function getDashboardStats(userRole: string, userName?: string) {
     }
   }) : []
 
-  // Recent orders
   const recentOrders = userCommandes
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5)
@@ -501,4 +552,7 @@ export function resetData(): void {
   localStorage.removeItem(KEYS.notifications)
   localStorage.removeItem(KEYS.salesReps)
   notifyCrmDataChanged('*')
+  
+  // Also sync again
+  syncSupabaseData()
 }

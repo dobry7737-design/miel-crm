@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog'
 import { pathForView, viewFromPathname, canAccessCrmView } from '@/lib/crm-routes'
 import { useToast } from '@/hooks/use-toast'
+import { syncSupabaseData } from '@/lib/crm-data'
 
 export function CrmLayoutClient({ children }: { children: React.ReactNode }) {
   const router = useRouter()
@@ -31,6 +32,10 @@ export function CrmLayoutClient({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const open = () => setLogoutDialog(true)
     window.addEventListener('crm-open-logout-dialog', open)
+    
+    // Launch background synchronization with Supabase on start
+    syncSupabaseData()
+    
     return () => window.removeEventListener('crm-open-logout-dialog', open)
   }, [])
 

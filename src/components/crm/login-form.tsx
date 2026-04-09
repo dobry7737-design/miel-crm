@@ -16,10 +16,12 @@ import { BrandLogo } from '@/components/crm/brand-logo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import Link from 'next/link'
+import { Phone } from 'lucide-react'
 import { DEMO_USERS, type DemoUser } from '@/lib/demo-users'
 
 interface LoginFormProps {
-  onLogin: (name: string, password: string) => Promise<void>
+  onLogin: (phone: string, password: string) => Promise<void>
 }
 
 const ease = [0.16, 1, 0.3, 1] as const
@@ -116,50 +118,23 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               className="mt-8 space-y-4"
               autoComplete="off"
             >
-              <div className="space-y-2">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  Comptes démo
-                </Label>
-                <div className="flex w-full flex-nowrap items-stretch gap-2">
-                  {DEMO_USERS.map((u) => (
-                    <Button
-                      key={u.id}
-                      type="button"
-                      variant={name === u.name ? 'default' : 'outline'}
-                      size="sm"
-                      title={
-                        u.role === 'COMMERCIAL'
-                          ? `Commercial — ${u.name}`
-                          : u.name
-                      }
-                      className="h-auto min-h-8 min-w-0 flex-1 shrink px-1.5 py-1.5 text-center text-[10px] font-medium leading-tight whitespace-normal sm:px-2 sm:text-xs"
-                      onClick={() => {
-                        setName(u.name)
-                        setPasswordPreset(u.password)
-                        setPasswordKey((k) => k + 1)
-                        setError('')
-                      }}
-                    >
-                      {demoButtonLabel(u)}
-                    </Button>
-                  ))}
-                </div>
-              </div>
 
-              <div className="space-y-2">
+
+              <div className="space-y-3">
                 <Label htmlFor="name" className="text-sm font-medium">
-                  Nom d&apos;utilisateur
+                  Numéro de téléphone (ou 'admin')
                 </Label>
                 <div className="relative">
-                  <User
+                  <Phone
                     className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                     aria-hidden
                   />
                   <Input
                     ref={nameInputRef}
-                    id="name"
-                    name="crm_username"
-                    placeholder="Sélectionnez un compte ou saisissez le nom"
+                    id="phone"
+                    type="tel"
+                    name="phone"
+                    placeholder="Ex: 77 123 45 67"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required
@@ -233,6 +208,12 @@ export function LoginForm({ onLogin }: LoginFormProps) {
                 )}
               </Button>
             </form>
+
+            <div className="mt-6 flex justify-center text-sm font-medium">
+              <Link href="/register" className="text-primary hover:underline">
+                Première connexion ? Créer mon mot de passe
+              </Link>
+            </div>
           </div>
         </div>
       </motion.div>

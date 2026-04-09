@@ -44,6 +44,8 @@ export function getRoleLabel(role: AppRole): string {
       return 'Directeur général'
     case 'COMMERCIAL':
       return 'Commercial'
+    case 'RESP_COMMERCIAL':
+      return 'Responsable Commercial'
     case 'ADMIN':
       return 'Administrateur'
     default:

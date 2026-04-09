@@ -1,8 +1,8 @@
 /** Rôles applicatifs (auth + simulation) */
-export type AppRole = 'DG' | 'COMMERCIAL' | 'ADMIN'
+export type AppRole = 'DG' | 'COMMERCIAL' | 'ADMIN' | 'RESP_COMMERCIAL'
 
 export function isAppRole(value: unknown): value is AppRole {
-  return value === 'DG' || value === 'COMMERCIAL' || value === 'ADMIN'
+  return value === 'DG' || value === 'COMMERCIAL' || value === 'ADMIN' || value === 'RESP_COMMERCIAL'
 }
 
 export {
