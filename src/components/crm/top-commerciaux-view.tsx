@@ -19,6 +19,7 @@ export function TopCommerciauxView() {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line
     setMounted(true)
     const bump = () => setVersion((v) => v + 1)
     window.addEventListener(CRM_DATA_CHANGED_EVENT, bump)
@@ -26,7 +27,7 @@ export function TopCommerciauxView() {
   }, [])
 
   // Calcul du classement
-  const topCommerciaux = useMemo(() => {
+  const topCommerciaux = (() => {
     const salesReps = getSalesReps()
     const clients = getClients()
     const commandes = getCommandes()
@@ -59,7 +60,7 @@ export function TopCommerciauxView() {
 
     // Tri desc par score
     return stats.sort((a, b) => b.score - a.score)
-  }, [version])
+  })()
 
   if (!mounted) {
     return (

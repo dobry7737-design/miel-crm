@@ -784,7 +784,7 @@ export function EquipeCommercialeView() {
       clientLabels: r.clientLabels,
       ventes: r.ventes,
       objectif: r.objectif,
-      photoUrl: r.photoUrl,
+      photoUrl: r.photoUrl || undefined,
     }))
     const csv = exportTeamRowsToCsv(exportRows, colVis)
     const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
