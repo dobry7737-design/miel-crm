@@ -16,6 +16,7 @@ export function canAccessCrmView(role: string | undefined, view: AppView): boole
     case 'clients':
       return canAddClient(role)
     case 'commandes':
+      return true
     case 'rapports':
       return canModifyData(role)
     case 'equipe':

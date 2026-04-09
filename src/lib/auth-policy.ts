@@ -30,8 +30,8 @@ export function canModifyData(role: string | undefined): boolean {
   return isFullDataAccess(role)
 }
 
-export function canModifyCommandes(role: string | undefined): boolean {
-  return isFullDataAccess(role)
+export function canModifyCommandes(_role: string | undefined): boolean {
+  return true
 }
 
 export function canExportReports(role: string | undefined): boolean {
