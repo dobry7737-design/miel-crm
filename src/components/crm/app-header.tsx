@@ -104,8 +104,8 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
   }, [])
 
   // Load notifications from store (reactive to version changes)
-  const notifications = useMemo(() => getNotifications(), [notifVersion])
-  const unreadCount = useMemo(() => getUnreadCount(), [notifVersion])
+  const notifications = useMemo(() => getNotifications(effectiveRole || undefined, userName), [notifVersion, effectiveRole, userName])
+  const unreadCount = useMemo(() => getUnreadCount(effectiveRole || undefined, userName), [notifVersion, effectiveRole, userName])
 
   const loadNotifications = useCallback(() => {
     setNotifVersion(v => v + 1)
@@ -184,7 +184,7 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
   }
 
   const handleMarkAllRead = async () => {
-    await markAllRead()
+    await markAllRead(effectiveRole || undefined, userName)
     loadNotifications()
   }
 

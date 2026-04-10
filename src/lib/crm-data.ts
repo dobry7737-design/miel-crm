@@ -429,21 +429,33 @@ export function ventesRealiseesForRep(repName: string): number {
 }
 
 // --- NOTIFICATIONS ---
-export function getNotifications(): Notification[] {
-  return load<Notification>(KEYS.notifications, [])
+export function getNotifications(userRole?: string, userName?: string): Notification[] {
+  const allNotifs = load<Notification>(KEYS.notifications, [])
+  if (userRole === 'COMMERCIAL' && userName) {
+    const clients = getClients()
+    const myClients = clients.filter(c => c.commercial === userName)
+    const myClientNames = myClients.map(c => c.name)
+    return allNotifs.filter(n => 
+      myClientNames.some(name => n.message.startsWith(name) || n.message.includes(name))
+    )
+  }
+  return allNotifs
 }
 
-export function getUnreadCount(): number {
-  return getNotifications().filter(n => !n.read).length
+export function getUnreadCount(userRole?: string, userName?: string): number {
+  return getNotifications(userRole, userName).filter(n => !n.read).length
 }
 
-export async function markAllRead(): Promise<void> {
-  const notifs = getNotifications()
+export async function markAllRead(userRole?: string, userName?: string): Promise<void> {
+  const notifs = getNotifications(userRole, userName)
   const ids = notifs.filter(n => !n.read).map(n => n.id)
   if (ids.length > 0) {
     await supabase.from('notifications').update({ read: true }).in('id', ids)
-    notifs.forEach(n => { n.read = true })
-    save(KEYS.notifications, notifs)
+    const allNotifs = load<Notification>(KEYS.notifications, [])
+    allNotifs.forEach(n => {
+      if (ids.includes(n.id)) n.read = true
+    })
+    save(KEYS.notifications, allNotifs)
   }
 }
 

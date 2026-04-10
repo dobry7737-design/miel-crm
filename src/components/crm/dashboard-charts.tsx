@@ -27,7 +27,7 @@ export default function DashboardCharts({
   pieData: DashboardPieDatum[]
 }) {
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
+    <div className="grid min-w-0 gap-6 lg:grid-cols-3">
       <Card className="lg:col-span-2 border-primary/15 dark:border-primary/25">
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold">Ventes mensuelles</CardTitle>

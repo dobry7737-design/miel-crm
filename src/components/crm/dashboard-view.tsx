@@ -73,10 +73,11 @@ function AnimatedNumber({ value, duration = 1200 }: { value: number; duration?: 
       const elapsed = timestamp - startTime
       const progress = Math.min(elapsed / duration, 1)
       const eased = 1 - Math.pow(2, -10 * progress)
-      setDisplay(Math.round(eased * value))
       if (progress < 1) {
+        setDisplay(Math.round(eased * value))
         rafIdRef.current = requestAnimationFrame(animate)
       } else {
+        setDisplay(value)
         rafIdRef.current = null
       }
     }
@@ -397,7 +398,7 @@ export function DashboardView({ isAdmin, userRole, userName, statsUserName, onNa
   )
 
   const topNotifications = useMemo(() => {
-    const all = getNotifications()
+    const all = getNotifications(userRole || undefined, statsFilterName)
     const r = userRole || undefined
     const filtered = !canAccessCrmView(r, 'commandes')
       ? all.filter((n) => n.link !== 'commandes')
@@ -442,7 +443,7 @@ export function DashboardView({ isAdmin, userRole, userName, statsUserName, onNa
         onNavigate={onNavigate}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Total Ventes" rawValue={stats.totalVentes} icon={DollarSign} grad="from-primary to-emerald-600" bg="bg-primary/10 dark:bg-primary/20" clr="text-primary" trend={trend} delay={0} />
         <KpiCard label="Clients" rawValue={stats.totalClients} icon={Users} grad="from-emerald-500 to-teal-500" bg="bg-emerald-100" clr="text-emerald-600" trend={null} delay={0.08} />
         <KpiCard label="Commandes" rawValue={stats.totalCommandes} icon={ShoppingCart} grad="from-violet-500 to-purple-500" bg="bg-violet-100" clr="text-violet-600" trend={null} delay={0.16} />
@@ -451,7 +452,7 @@ export function DashboardView({ isAdmin, userRole, userName, statsUserName, onNa
 
       <DashboardCharts monthlyData={stats.monthlyData} pieData={pieData} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-2">
         <ActivityTimeline notifications={topNotifications} onNavigate={onNavigate} />
 
         <Card className="border-primary/15 dark:border-primary/25">
