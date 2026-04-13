@@ -10,7 +10,7 @@ import { useTheme } from 'next-themes'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -29,9 +29,15 @@ import {
   clearNotification, getClients, getCommandes,
   type Notification,
 } from '@/lib/crm-data'
+import {
+  PROFILE_AVATAR_CHANGED_EVENT,
+  profileAvatarStorageKey,
+  readStoredProfileAvatarUrl,
+} from '@/lib/profile-avatar'
 
 interface AppHeaderProps {
   currentView: AppView
+  userId: string
   userName: string
   onNavigate?: (view: AppView) => void
   onLogout: () => void
@@ -75,7 +81,7 @@ const notifColor: Record<string, string> = {
   error: 'text-destructive bg-destructive/10 dark:text-red-400 dark:bg-destructive/20',
 }
 
-export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHeaderProps) {
+export function AppHeader({ currentView, userId, userName, onNavigate, onLogout }: AppHeaderProps) {
   const { effectiveRole } = usePermissions()
   const { toast } = useToast()
   const { theme, setTheme } = useTheme()
@@ -88,6 +94,7 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
   const [searchQuery, setSearchQuery] = useState('')
   const [notifOpen, setNotifOpen] = useState(false)
   const [notifVersion, setNotifVersion] = useState(0)
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
   const searchRef = useRef<HTMLDivElement>(null)
   const notifRef = useRef<HTMLDivElement>(null)
 
@@ -102,6 +109,21 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
     window.addEventListener(CRM_DATA_CHANGED_EVENT, bump)
     return () => window.removeEventListener(CRM_DATA_CHANGED_EVENT, bump)
   }, [])
+
+  useEffect(() => {
+    const refreshAvatar = () => setAvatarSrc(readStoredProfileAvatarUrl(userId))
+    refreshAvatar()
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === profileAvatarStorageKey(userId)) refreshAvatar()
+    }
+    const onAvatarChanged = () => refreshAvatar()
+    window.addEventListener('storage', onStorage)
+    window.addEventListener(PROFILE_AVATAR_CHANGED_EVENT, onAvatarChanged)
+    return () => {
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener(PROFILE_AVATAR_CHANGED_EVENT, onAvatarChanged)
+    }
+  }, [userId])
 
   // Load notifications from store (reactive to version changes)
   const notifications = useMemo(() => getNotifications(effectiveRole || undefined, userName), [notifVersion, effectiveRole, userName])
@@ -419,6 +441,9 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
             className="flex min-h-10 min-w-10 shrink-0 items-center gap-2 rounded-lg px-1.5 py-1.5 transition-colors hover:bg-muted sm:min-h-0 sm:min-w-0 sm:gap-3 sm:px-2"
           >
             <Avatar className="h-9 w-9 ring-2 ring-primary/25 sm:h-8 sm:w-8">
+              {avatarSrc ? (
+                <AvatarImage src={avatarSrc} alt="" className="object-cover" />
+              ) : null}
               <AvatarFallback className="bg-gradient-to-br from-primary to-emerald-700 text-xs font-bold text-primary-foreground">
                 {getInitials(userName)}
               </AvatarFallback>
@@ -432,11 +457,21 @@ export function AppHeader({ currentView, userName, onNavigate, onLogout }: AppHe
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <div className="px-2 py-1.5">
-            <p className="text-sm font-medium">{userName}</p>
-            <p className="text-xs text-muted-foreground">
-              {effectiveRoleLabel(effectiveRole)}
-            </p>
+          <div className="flex items-center gap-2.5 px-2 py-1.5">
+            <Avatar className="h-9 w-9 shrink-0 ring-2 ring-primary/20">
+              {avatarSrc ? (
+                <AvatarImage src={avatarSrc} alt="" className="object-cover" />
+              ) : null}
+              <AvatarFallback className="bg-gradient-to-br from-primary to-emerald-700 text-[10px] font-bold text-primary-foreground">
+                {getInitials(userName)}
+              </AvatarFallback>
+            </Avatar>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{userName}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {effectiveRoleLabel(effectiveRole)}
+              </p>
+            </div>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem className="text-muted-foreground" onClick={() => onNavigate?.('profil')}>

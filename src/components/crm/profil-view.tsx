@@ -1,19 +1,20 @@
 "use client"
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
   Shield, Palette, RotateCcw, Download,
   Moon, Sun, Users, ShoppingCart, LogOut, AlertTriangle,
   Activity, Clock, Bell, BellOff, Settings,
-  CheckCircle2, Info, XCircle, LayoutDashboard,
+  CheckCircle2, Info, XCircle, LayoutDashboard, Camera, ImageOff,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -47,6 +48,12 @@ import {
 import type { AppRole } from '@/lib/permissions'
 import { isAppRole } from '@/lib/permissions'
 import { getRoleLabel } from '@/lib/demo-users'
+import {
+  MAX_PROFILE_AVATAR_BYTES,
+  PROFILE_AVATAR_CHANGED_EVENT,
+  profileAvatarStorageKey,
+  readStoredProfileAvatarUrl,
+} from '@/lib/profile-avatar'
 
 function accountRoleBadgeClass(role: AppRole): string {
   switch (role) {
@@ -105,6 +112,8 @@ const LINK_META: Record<
 }
 
 interface ProfilViewProps {
+  /** Identifiant utilisateur (stockage avatar local) */
+  userId: string
   userName: string
   /** Rôle issu du compte (token), inchangé par la simulation d’en-tête */
   accountRole: AppRole
@@ -112,17 +121,21 @@ interface ProfilViewProps {
   effectiveRole: AppRole | ''
   roleSimulationActive: boolean
   canModifyData?: boolean
+  /** Export CSV : réservé au compte Directeur général */
+  canExportFiles?: boolean
   /** Filtre clients / commandes lorsque l’utilisateur n’a pas accès aux données globales */
   dataUserName?: string
   onLogout: () => void
 }
 
 export function ProfilView({
+  userId,
   userName,
   accountRole,
   effectiveRole,
   roleSimulationActive,
   canModifyData = true,
+  canExportFiles = false,
   dataUserName = '',
   onLogout,
 }: ProfilViewProps) {
@@ -137,6 +150,8 @@ export function ProfilView({
   const [crmDataVersion, setCrmDataVersion] = useState(0)
   const [activityPageIndex, setActivityPageIndex] = useState(0)
   const [activityPageSize, setActivityPageSize] = useState(10)
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -204,6 +219,14 @@ export function ProfilView({
     }
   }, [])
 
+  useEffect(() => {
+    if (!userId) {
+      setAvatarSrc(null)
+      return
+    }
+    setAvatarSrc(readStoredProfileAvatarUrl(userId))
+  }, [userId])
+
 
 
   const handleToggleNotifPrefs = (checked: boolean) => {
@@ -221,7 +244,54 @@ export function ProfilView({
     setLastExport(now)
   }
 
+  const handleAvatarFile = (fileList: FileList | null) => {
+    const file = fileList?.[0]
+    if (!file || !userId) return
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Format non pris en charge', description: 'Choisissez une image (JPEG, PNG, WebP…)', variant: 'destructive' })
+      return
+    }
+    if (file.size > MAX_PROFILE_AVATAR_BYTES) {
+      toast({ title: 'Fichier trop volumineux', description: 'Image limitée à 1,5 Mo.', variant: 'destructive' })
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = typeof reader.result === 'string' ? reader.result : null
+      if (!dataUrl?.startsWith('data:image/')) return
+      try {
+        localStorage.setItem(profileAvatarStorageKey(userId), dataUrl)
+        setAvatarSrc(dataUrl)
+        window.dispatchEvent(new CustomEvent(PROFILE_AVATAR_CHANGED_EVENT))
+        toast({ title: 'Photo mise à jour', description: 'Votre avatar est enregistré sur cet appareil.' })
+      } catch {
+        toast({ title: 'Enregistrement impossible', description: 'Espace de stockage insuffisant ou accès refusé.', variant: 'destructive' })
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const clearAvatar = () => {
+    if (!userId) return
+    try {
+      localStorage.removeItem(profileAvatarStorageKey(userId))
+      setAvatarSrc(null)
+      window.dispatchEvent(new CustomEvent(PROFILE_AVATAR_CHANGED_EVENT))
+      toast({ title: 'Photo retirée', description: 'Les initiales sont à nouveau affichées.' })
+    } catch {
+      /* ignore */
+    }
+  }
+
   const handleExportClients = () => {
+    if (!canExportFiles) {
+      toast({
+        title: 'Export réservé',
+        description: 'Seul le Directeur général peut télécharger des exports.',
+        variant: 'destructive',
+      })
+      return
+    }
     const clients = clientsForScope
     const headers = 'Nom,Téléphone,Email,Adresse,Commercial,Commandes'
     const rows = clients.map(c =>
@@ -235,6 +305,14 @@ export function ProfilView({
   }
 
   const handleExportCommandes = () => {
+    if (!canExportFiles) {
+      toast({
+        title: 'Export réservé',
+        description: 'Seul le Directeur général peut télécharger des exports.',
+        variant: 'destructive',
+      })
+      return
+    }
     const commandes = commandesForScope
     const headers = 'Client,Commercial,Quantité,PrixUnitaire,Montant,Statut,Date'
     const rows = commandes.map(c =>
@@ -248,6 +326,14 @@ export function ProfilView({
   }
 
   const handleExportAll = () => {
+    if (!canExportFiles) {
+      toast({
+        title: 'Export réservé',
+        description: 'Seul le Directeur général peut télécharger des exports.',
+        variant: 'destructive',
+      })
+      return
+    }
     handleExportClients()
     // Small delay so browser doesn't block second download
     setTimeout(() => handleExportCommandes(), 300)
@@ -321,14 +407,56 @@ export function ProfilView({
         </div>
         <CardContent className="pt-0 relative">
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 -mt-12">
-            <div className="relative">
-              <Avatar className="h-24 w-24 ring-4 ring-background shadow-lg">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-emerald-700 text-primary-foreground text-2xl font-bold">
-                  {getInitials(userName)}
-                </AvatarFallback>
-              </Avatar>
-              {/* Online status indicator */}
-              <div className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-green-500 border-[3px] border-background shadow-sm" />
+            <div className="flex flex-col items-start gap-2">
+              <div className="relative">
+                <Avatar className="h-24 w-24 ring-4 ring-background shadow-lg">
+                  {avatarSrc ? (
+                    <AvatarImage src={avatarSrc} alt="" className="object-cover" />
+                  ) : null}
+                  <AvatarFallback className="bg-gradient-to-br from-primary to-emerald-700 text-primary-foreground text-2xl font-bold">
+                    {getInitials(userName)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="pointer-events-none absolute bottom-1 right-1 h-5 w-5 rounded-full border-[3px] border-background bg-green-500 shadow-sm" />
+              </div>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                onChange={(e) => {
+                  handleAvatarFile(e.target.files)
+                  e.target.value = ''
+                }}
+              />
+              <div className="flex flex-wrap gap-2 pl-0.5">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="h-8 gap-1.5 rounded-lg text-xs"
+                  disabled={!userId}
+                  onClick={() => avatarInputRef.current?.click()}
+                >
+                  <Camera className="h-3.5 w-3.5" />
+                  Changer la photo
+                </Button>
+                {avatarSrc && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 gap-1.5 rounded-lg text-xs text-muted-foreground"
+                    onClick={clearAvatar}
+                  >
+                    <ImageOff className="h-3.5 w-3.5" />
+                    Retirer
+                  </Button>
+                )}
+              </div>
+              {!userId && (
+                <p className="text-[11px] text-muted-foreground">Connectez-vous pour enregistrer une photo.</p>
+              )}
             </div>
             <div className="flex-1 pb-1">
               <h2 className="text-xl font-bold">{userName}</h2>
@@ -636,9 +764,11 @@ export function ProfilView({
             <div>
               <CardTitle className="text-base">Exporter les données</CardTitle>
               <CardDescription className="text-xs">
-                {canModifyData
-                  ? 'Téléchargez vos données au format CSV'
-                  : 'Export limité à votre portefeuille (clients et commandes qui vous sont attribués).'}
+                {canExportFiles
+                  ? canModifyData
+                    ? 'Téléchargez vos données au format CSV.'
+                    : 'Export limité à votre portefeuille (clients et commandes qui vous sont attribués).'
+                  : 'Les exports CSV sont réservés au compte Directeur général.'}
               </CardDescription>
             </div>
           </div>
@@ -671,6 +801,7 @@ export function ProfilView({
             <Button
               variant="outline"
               className="h-auto py-3 border-primary/25 dark:border-primary/40 hover:bg-primary/8 dark:hover:bg-primary/15 justify-start"
+              disabled={!canExportFiles}
               onClick={handleExportClients}
             >
               <Users className="h-5 w-5 text-primary mr-3" />
@@ -682,6 +813,7 @@ export function ProfilView({
             <Button
               variant="outline"
               className="h-auto py-3 border-primary/25 dark:border-primary/40 hover:bg-primary/8 dark:hover:bg-primary/15 justify-start"
+              disabled={!canExportFiles}
               onClick={handleExportCommandes}
             >
               <ShoppingCart className="h-5 w-5 text-primary mr-3" />
@@ -695,6 +827,7 @@ export function ProfilView({
           {/* Export all button */}
           <Button
             className="mt-auto w-full bg-gradient-to-r from-primary to-emerald-700 hover:from-primary/90 hover:to-emerald-800 text-primary-foreground"
+            disabled={!canExportFiles}
             onClick={handleExportAll}
           >
             <Download className="h-4 w-4 mr-2" />Tout exporter

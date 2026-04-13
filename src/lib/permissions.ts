@@ -11,6 +11,7 @@ export {
   canModifyData,
   canModifyCommandes,
   canExportReports,
+  canExportFiles,
   canUseReportGlobalFilters,
   canAddClient,
   canAccessRoleSimulation,

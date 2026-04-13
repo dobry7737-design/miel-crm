@@ -8,6 +8,7 @@
  * | Commandes (modifier)        | oui| oui   | non |
  * | Équipe commerciale (annuaire)| oui| oui   | oui (lecture seule) |
  * | Rapports complets + exports | oui| oui   | pas d’accès module (navigation) |
+ * | Téléchargements CSV / PDF   | oui| non   | non (réservé au compte DG)       |
  * | Simulation de rôle (démo)   | oui| oui   | non |
  */
 
@@ -36,6 +37,14 @@ export function canModifyCommandes(_role: string | undefined): boolean {
 
 export function canExportReports(role: string | undefined): boolean {
   return isFullDataAccess(role)
+}
+
+/**
+ * Fichiers exportés (CSV, PDF, etc.) : uniquement le compte **Directeur général** (`DG`),
+ * basé sur le rôle du compte connecté (pas le rôle simulé).
+ */
+export function canExportFiles(accountRole: string | undefined): boolean {
+  return accountRole === 'DG'
 }
 
 export function canUseReportGlobalFilters(role: string | undefined): boolean {

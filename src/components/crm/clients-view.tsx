@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useMemo, useEffect, type ElementType } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef, type ElementType, type KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -41,6 +41,7 @@ import {
 } from '@/lib/crm-data'
 import { DataTablePagination } from '@/components/crm/data-table/data-table-pagination'
 import { pathForClientHistory } from '@/lib/crm-routes'
+import { cn } from '@/lib/utils'
 
 type ClientRow = Client & { orderCount: number; totalAchats: number }
 type SortKey = 'id' | 'name' | 'phone' | 'address' | 'orderCount' | 'totalAchats'
@@ -62,6 +63,7 @@ function ClientsOverviewStat({
   icon: Icon,
   accent,
   delay,
+  onActivate,
 }: {
   label: string
   value: string
@@ -69,14 +71,32 @@ function ClientsOverviewStat({
   icon: ElementType
   accent: string
   delay: number
+  onActivate?: () => void
 }) {
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (!onActivate) return
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onActivate()
+    }
+  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease, delay }}
     >
-      <Card className="group relative overflow-hidden border-primary/12 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/22 hover:shadow-lg hover:shadow-primary/5 dark:border-primary/18">
+      <Card
+        className={cn(
+          'group relative overflow-hidden border-primary/12 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/22 hover:shadow-lg hover:shadow-primary/5 dark:border-primary/18',
+          onActivate && 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2',
+        )}
+        role={onActivate ? 'button' : undefined}
+        tabIndex={onActivate ? 0 : undefined}
+        onClick={onActivate}
+        onKeyDown={onKeyDown}
+        aria-label={onActivate ? `${label} — afficher la liste` : undefined}
+      >
         <div className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r ${accent} opacity-90 transition-all group-hover:h-1`} />
         <CardContent className="p-4 pt-5 sm:p-5">
           <div className="flex items-start justify-between gap-3">
@@ -121,6 +141,13 @@ export function ClientsView() {
   const [form, setForm] = useState(emptyForm)
   const [pageIndex, setPageIndex] = useState(0)
   const [pageSize, setPageSize] = useState(10)
+  const listeRef = useRef<HTMLDivElement>(null)
+
+  const scrollToListe = useCallback(() => {
+    requestAnimationFrame(() => {
+      listeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [])
 
   useEffect(() => {
     const bump = () => {
@@ -347,13 +374,12 @@ export function ClientsView() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease }}
       >
-        <Card className="overflow-hidden border-primary/15 shadow-md shadow-black/[0.04] dark:border-primary/25 dark:shadow-black/20">
+        <Card className="overflow-hidden border-primary/15 shadow-sm shadow-black/[0.03] dark:border-primary/25 dark:shadow-black/15">
           <div className="relative">
-            <div className="pointer-events-none absolute -right-24 -top-28 h-60 w-60 rounded-full bg-primary/18 blur-3xl dark:bg-primary/22" aria-hidden />
-            <div className="pointer-events-none absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-emerald-500/14 blur-3xl dark:bg-emerald-600/18" aria-hidden />
-            <CardContent className="relative p-5 sm:p-7 md:p-8">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 flex-1 space-y-3">
+            <div className="pointer-events-none absolute -right-16 -top-20 h-44 w-44 rounded-full bg-primary/14 blur-3xl dark:bg-primary/18" aria-hidden />
+            <CardContent className="relative p-3 sm:p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="secondary" className="rounded-full border-primary/20 bg-primary/10 text-[10px] font-semibold uppercase tracking-wider text-primary dark:bg-primary/15">
                       Portefeuille clients
@@ -367,16 +393,16 @@ export function ClientsView() {
                       </Badge>
                     )}
                   </div>
-                  <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Clients</h1>
-                  <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                    Gérez les fiches, le commercial assigné et la corrélation avec les commandes (nombre et CA). Données de démonstration persistées en local.
+                  <h1 className="text-lg font-bold tracking-tight sm:text-xl">Clients</h1>
+                  <p className="max-w-xl text-xs leading-snug text-muted-foreground">
+                    Fiches, commerciaux et lien avec les commandes (données locales).
                   </p>
                 </div>
                 {canUseClientForms && (
                   <Button
                     onClick={openAdd}
-                    size="lg"
-                    className="h-11 shrink-0 gap-2 rounded-xl bg-gradient-to-r from-primary to-emerald-700 px-5 text-primary-foreground shadow-lg shadow-primary/20"
+                    size="default"
+                    className="h-10 shrink-0 gap-2 rounded-xl bg-gradient-to-r from-primary to-emerald-700 px-4 text-primary-foreground shadow-md shadow-primary/15"
                   >
                     <Plus className="h-4 w-4" />
                     Nouveau client
@@ -396,6 +422,11 @@ export function ClientsView() {
           icon={Users}
           accent="from-violet-500 to-purple-600"
           delay={0.05}
+          onActivate={() => {
+            setActivityFilter('ALL')
+            setPageIndex(0)
+            scrollToListe()
+          }}
         />
         <ClientsOverviewStat
           label="CA cumulé (commandes)"
@@ -404,6 +435,11 @@ export function ClientsView() {
           icon={Wallet}
           accent="from-primary to-emerald-600"
           delay={0.09}
+          onActivate={() => {
+            setActivityFilter('ALL')
+            setPageIndex(0)
+            scrollToListe()
+          }}
         />
         <ClientsOverviewStat
           label="Clients actifs"
@@ -412,6 +448,11 @@ export function ClientsView() {
           icon={ShoppingCart}
           accent="from-sky-500 to-blue-600"
           delay={0.13}
+          onActivate={() => {
+            setActivityFilter('WITH_ORDERS')
+            setPageIndex(0)
+            scrollToListe()
+          }}
         />
         <ClientsOverviewStat
           label="Cmd / client (moy.)"
@@ -420,9 +461,15 @@ export function ClientsView() {
           icon={BarChart3}
           accent="from-amber-500 to-orange-600"
           delay={0.17}
+          onActivate={() => {
+            setActivityFilter('NO_ORDERS')
+            setPageIndex(0)
+            scrollToListe()
+          }}
         />
       </div>
 
+      <div ref={listeRef} className="scroll-mt-4 space-y-6">
       <Card className="border-primary/12 dark:border-primary/18">
         <CardHeader className="space-y-1 pb-3">
           <CardTitle className="text-base font-semibold">Filtres</CardTitle>
@@ -725,6 +772,7 @@ export function ClientsView() {
           </Card>
         </>
       )}
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent

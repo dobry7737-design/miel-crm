@@ -264,7 +264,7 @@ export function RapportsView({
           <p className="text-sm text-muted-foreground">
             {fullAccess
               ? 'Statistiques détaillées de votre activité'
-              : 'Synthèse de votre activité commerciale (exports réservés au direction)'}
+              : 'Synthèse de votre activité commerciale (exports réservés au Directeur général)'}
           </p>
         </div>
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">

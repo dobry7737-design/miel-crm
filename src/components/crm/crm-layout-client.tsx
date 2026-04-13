@@ -125,6 +125,7 @@ export function CrmLayoutClient({ children }: { children: React.ReactNode }) {
       <SidebarInset className="min-h-0">
         <AppHeader
           currentView={safeView}
+          userId={user?.id ?? ''}
           userName={user?.name || ''}
           onNavigate={handleNavigate}
           onLogout={handleLogout}

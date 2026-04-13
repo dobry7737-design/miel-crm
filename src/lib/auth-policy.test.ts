@@ -5,15 +5,20 @@ import assert from 'node:assert/strict'
 import {
   canModifyCommandes,
   canExportReports,
+  canExportFiles,
   canEditClientRow,
   canAccessRoleSimulation,
 } from './auth-policy'
 import { canAccessCrmView } from './crm-routes'
 
-assert.equal(canModifyCommandes('COMMERCIAL'), false)
+assert.equal(canModifyCommandes('COMMERCIAL'), true)
 assert.equal(canModifyCommandes('DG'), true)
 assert.equal(canExportReports('ADMIN'), true)
 assert.equal(canExportReports('COMMERCIAL'), false)
+assert.equal(canExportFiles('DG'), true)
+assert.equal(canExportFiles('ADMIN'), false)
+assert.equal(canExportFiles('COMMERCIAL'), false)
+assert.equal(canExportFiles(undefined), false)
 assert.equal(canEditClientRow('COMMERCIAL', 'Amadou Diallo', 'Amadou Diallo'), true)
 assert.equal(canEditClientRow('COMMERCIAL', 'Amadou Diallo', 'Fatou Sy'), false)
 assert.equal(canEditClientRow('DG', 'x', 'y'), true)

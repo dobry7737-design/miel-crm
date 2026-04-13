@@ -26,16 +26,19 @@ const ProfilView = dynamic(
 
 export default function CrmProfilPage() {
   const { user } = useAuth()
-  const { mockMode, effectiveRole, canModifyData, dataUserName } = usePermissions()
+  const { mockMode, effectiveRole, canModifyData, dataUserName, canExportReports } =
+    usePermissions()
   const effectiveRoleTyped = effectiveRole as AppRole | ''
 
   return (
     <ProfilView
+      userId={user?.id ?? ''}
       userName={user?.name ?? ''}
       accountRole={user?.role ?? 'COMMERCIAL'}
       effectiveRole={effectiveRoleTyped}
       roleSimulationActive={mockMode !== 'real'}
       canModifyData={canModifyData}
+      canExportFiles={canExportReports}
       dataUserName={dataUserName}
       onLogout={openLogoutDialog}
     />

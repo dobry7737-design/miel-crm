@@ -551,7 +551,7 @@ function TeamOverviewStat({
 }
 
 export function EquipeCommercialeView() {
-  const { canModifyData } = usePermissions()
+  const { canModifyData, canExportReports } = usePermissions()
   const { toast } = useToast()
   const [version, setVersion] = useState(0)
   const [search, setSearch] = useState('')
@@ -770,6 +770,14 @@ export function EquipeCommercialeView() {
   }, [rows, safePageIndex, pageSize])
 
   const downloadTeamCsv = () => {
+    if (!canExportReports) {
+      toast({
+        title: 'Export réservé',
+        description: 'Seul le Directeur général peut exporter des fichiers.',
+        variant: 'destructive',
+      })
+      return
+    }
     const exportRows: TeamRowExport[] = rows.map((r) => ({
       id: r.id,
       name: r.name,
@@ -1262,7 +1270,7 @@ export function EquipeCommercialeView() {
                     <Link2 className="h-4 w-4" aria-hidden />
                     Copier le lien
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={downloadTeamCsv}>
+                  <DropdownMenuItem disabled={!canExportReports} onClick={downloadTeamCsv}>
                     <Download className="h-4 w-4" aria-hidden />
                     Exporter CSV
                   </DropdownMenuItem>
