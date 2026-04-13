@@ -34,6 +34,7 @@ import {
   profileAvatarStorageKey,
   readStoredProfileAvatarUrl,
 } from '@/lib/profile-avatar'
+import { OrderAlertsContactBar } from '@/components/crm/order-alerts-contact-bar'
 
 interface AppHeaderProps {
   currentView: AppView
@@ -412,11 +413,12 @@ export function AppHeader({ currentView, userId, userName, onNavigate, onLogout 
                   })
                 )}
               </ScrollArea>
-              {notifications.length > 0 && (
-                <div className="border-t px-4 py-2.5">
+              <div className="space-y-2 border-t px-3 py-2.5">
+                <OrderAlertsContactBar label="Alertes commandes (e-mail) :" />
+                {notifications.length > 0 && (
                   <button
                     type="button"
-                    className="text-xs text-primary hover:text-primary/90 font-medium transition-colors"
+                    className="text-xs font-medium text-primary transition-colors hover:text-primary/90"
                     onClick={() => {
                       if (onNavigate) onNavigate(notifSeeAllTarget.view)
                       setNotifOpen(false)
@@ -424,8 +426,8 @@ export function AppHeader({ currentView, userId, userName, onNavigate, onLogout 
                   >
                     {notifSeeAllTarget.label}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

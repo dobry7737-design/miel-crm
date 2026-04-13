@@ -27,6 +27,7 @@ import { formatNotificationDates } from '@/lib/notification-display'
 import type { AppView } from '@/lib/crm-routes'
 import { canAccessCrmView } from '@/lib/crm-routes'
 import { getRoleLabel } from '@/lib/demo-users'
+import { OrderAlertsContactBar } from '@/components/crm/order-alerts-contact-bar'
 
 const DashboardCharts = dynamic(() => import('./dashboard-charts'), {
   ssr: false,
@@ -504,6 +505,10 @@ export function DashboardView({ isAdmin, userRole, userName, statsUserName, onNa
           </CardContent>
         </Card>
       </div>
+
+      {canOpenCommandes && (
+        <OrderAlertsContactBar label="Contact pour les commandes (e-mail) :" />
+      )}
 
       {isAdmin && stats.commercials.length > 0 && (
         <Card className="border-primary/15 dark:border-primary/25">

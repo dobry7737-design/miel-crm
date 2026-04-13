@@ -44,7 +44,7 @@ import { DataTablePagination } from '@/components/crm/data-table/data-table-pagi
 import { cn } from '@/lib/utils'
 
 type StatusFilter = 'ALL' | 'EN_ATTENTE' | 'CONFIRMEE' | 'LIVREE' | 'ANNULEE'
-type SortKey = 'id' | 'client' | 'date' | 'montant' | 'commercial'
+type SortKey = 'client' | 'date' | 'montant' | 'commercial'
 type SortDir = 'asc' | 'desc'
 
 type CommandeFormState = {
@@ -214,8 +214,7 @@ export function CommandesView() {
         (c) =>
           !search ||
           c.client.toLowerCase().includes(search.toLowerCase()) ||
-          c.commercial.toLowerCase().includes(search.toLowerCase()) ||
-          c.id.includes(search),
+          c.commercial.toLowerCase().includes(search.toLowerCase()),
       )
     if (dateFrom) {
       const start = new Date(dateFrom)
@@ -232,8 +231,7 @@ export function CommandesView() {
     }
     list = [...list].sort((a, b) => {
       let cmp = 0
-      if (sortKey === 'id') cmp = Number(a.id) - Number(b.id)
-      else if (sortKey === 'client') cmp = a.client.localeCompare(b.client, 'fr')
+      if (sortKey === 'client') cmp = a.client.localeCompare(b.client, 'fr')
       else if (sortKey === 'commercial') cmp = a.commercial.localeCompare(b.commercial, 'fr')
       else if (sortKey === 'date') cmp = new Date(a.date).getTime() - new Date(b.date).getTime()
       else if (sortKey === 'montant') cmp = a.montant - b.montant
@@ -500,7 +498,7 @@ export function CommandesView() {
       <Card className="border-primary/12 dark:border-primary/18">
         <CardHeader className="space-y-1 pb-3">
           <CardTitle className="text-base font-semibold">Filtres</CardTitle>
-          <CardDescription>Statut, période, client et recherche libre (ID, client, commercial)</CardDescription>
+          <CardDescription>Statut, période, client et recherche libre (client, commercial)</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 pt-0">
           <Tabs
@@ -586,7 +584,7 @@ export function CommandesView() {
             <div className="relative min-w-0 max-w-md flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
               <Input
-                placeholder="ID, client, commercial…"
+                placeholder="Client, commercial…"
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value)
@@ -653,9 +651,6 @@ export function CommandesView() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/60 hover:bg-transparent">
-                    <TableHead className="w-20 cursor-pointer text-xs font-semibold select-none" onClick={() => toggleSort('id')}>
-                      <span className="inline-flex items-center gap-1">ID <ArrowUpDown className="h-3 w-3 opacity-50" /></span>
-                    </TableHead>
                     <TableHead className="cursor-pointer text-xs font-semibold select-none" onClick={() => toggleSort('client')}>
                       <span className="inline-flex items-center gap-1">Client <ArrowUpDown className="h-3 w-3 opacity-50" /></span>
                     </TableHead>
@@ -685,7 +680,6 @@ export function CommandesView() {
                           exit={{ opacity: 0 }}
                           className="border-border/50 transition-colors hover:bg-primary/[0.04] dark:hover:bg-primary/10"
                         >
-                          <TableCell className="font-mono text-xs text-muted-foreground">{cmd.id}</TableCell>
                           <TableCell>
                             <button type="button" onClick={() => setDetailCmd(cmd)} className="text-left text-sm font-medium hover:underline">
                               {cmd.client}
@@ -752,7 +746,6 @@ export function CommandesView() {
                     >
                       <div className="flex items-start justify-between mb-2 gap-2">
                         <div className="min-w-0">
-                          <p className="text-[10px] text-muted-foreground font-mono">#{cmd.id}</p>
                           <p className="font-semibold text-sm">{cmd.client}</p>
                           <p className="text-xs text-muted-foreground">{cmd.commercial}</p>
                         </div>
@@ -938,7 +931,7 @@ export function CommandesView() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/12 to-emerald-100/80 dark:from-primary/25 dark:to-emerald-950/40">
                 <ShoppingCart className="h-4 w-4 text-primary" />
               </div>
-              <span>Détail — commande #{detailCmd?.id}</span>
+              <span>Détail de la commande</span>
             </DialogTitle>
             <DialogDescription>Récapitulatif de la commande sélectionnée.</DialogDescription>
           </DialogHeader>

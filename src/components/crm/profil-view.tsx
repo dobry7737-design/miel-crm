@@ -54,6 +54,7 @@ import {
   profileAvatarStorageKey,
   readStoredProfileAvatarUrl,
 } from '@/lib/profile-avatar'
+import { ORDER_ALERTS_EMAIL } from '@/lib/order-alerts-contact'
 
 function accountRoleBadgeClass(role: AppRole): string {
   switch (role) {
@@ -234,7 +235,9 @@ export function ProfilView({
     localStorage.setItem('fab_notif_prefs', String(checked))
     toast({
       title: checked ? 'Notifications activées' : 'Notifications désactivées',
-      description: checked ? 'Vous recevrez les notifications de commande' : 'Les notifications sont désormais silencieuses',
+      description: checked
+        ? `Alertes commandes aussi par e-mail : ${ORDER_ALERTS_EMAIL}`
+        : 'Les notifications dans l’application sont désormais silencieuses',
     })
   }
 
@@ -733,8 +736,8 @@ export function ProfilView({
                 <p className="text-sm font-medium leading-tight">Notifications</p>
                 <p className="text-xs leading-snug text-muted-foreground">
                   {notifPrefs
-                    ? 'Notifications activées — recevez les alertes de commande'
-                    : 'Notifications désactivées — mode silencieux'
+                    ? `Alertes dans l’app + contact commandes : ${ORDER_ALERTS_EMAIL}`
+                    : 'Notifications désactivées — mode silencieux dans l’application'
                   }
                 </p>
               </div>

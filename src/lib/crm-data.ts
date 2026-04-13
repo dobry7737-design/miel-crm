@@ -4,6 +4,7 @@
 import { format, subMonths } from 'date-fns'
 import { fr } from 'date-fns/locale'
 import { createClient } from './supabase/client'
+import { appendOrderAlertsContactLine } from './order-alerts-contact'
 
 const supabase = createClient()
 
@@ -477,7 +478,9 @@ export async function clearNotification(id: string): Promise<void> {
 }
 
 export async function addNotification(type: Notification['type'], title: string, message: string, link?: string | null): Promise<void> {
-  const dbPayload = { type, title, message, link: link || null, read: false }
+  const messageOut =
+    link === 'commandes' ? appendOrderAlertsContactLine(message) : message
+  const dbPayload = { type, title, message: messageOut, link: link || null, read: false }
   const { data: dbNotif, error } = await supabase.from('notifications').insert(dbPayload).select().single()
   if (!error && dbNotif) {
     const notifs = getNotifications()
