@@ -1,8 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// AAM — Assistances Assurances Mali
+// Plateforme de courtage en assurances
+// Prisma schema
 
 generator client {
   provider = "prisma-client-js"
@@ -13,20 +11,213 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ============ UTILISATEURS & RBAC ============
+
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String // hashed password (demo: plain for now)
+  name          String
+  role          String    @default("client") // admin | agent | client | gestionnaire | correspondant
+  telephone     String?
+  avatar        String? // initials
+  statut        String    @default("Actif") // Actif | Suspendu | Invité
+  // For correspondant role only
+  companyId     String?
+  company       Compagnie? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  // Relations
+  devis         Devis[]
+  contrats      Contrat[]
+  sinistres     Sinistre[]
+  paiements     Paiement[]
+  auditLogs     AuditLog[]
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([role])
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// ============ COMPAGNIES PARTENAIRES ============
+
+model Compagnie {
+  id              String      @id @default(cuid())
+  nom             String
+  initials        String      @default("")
+  iconColor       String      @default("bg-blue-500")
+  agrement        String      @unique // ex: CIMA-NSIA-2018
+  statut          String      @default("À valider") // Actif | À valider | Inactif
+  rating          Float       @default(0) // out of 5
+  delaiTraitement Int         @default(0) // heures
+  contact         String
+  email           String
+  telephone       String
+  datePartenariat String
+  branches        String      @default("") // comma-separated: Auto,Santé,Habitation
+  // Relations
+  produits        Produit[]
+  devis           Devis[]
+  contrats        Contrat[]
+  sinistres       Sinistre[]
+  paiements       Paiement[]
+  correspondants  User[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+// ============ PRODUITS & GRILLES TARIFAIRES ============
+
+model Produit {
+  id          String    @id @default(cuid())
+  nom         String
+  branche     String // Auto | Santé | Habitation | Voyage | Vie
+  compagnieId String
+  compagnie   Compagnie @relation(fields: [compagnieId], references: [id], onDelete: Cascade)
+  // Tarification (stored as JSON string for SQLite)
+  tarifsJson  String    @default("{}") // ex: {"basePrime": 100000, "factors": {...}}
+  garanties   String    @default("") // comma-separated garanties
+  statut      String    @default("Actif")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([compagnieId])
+  @@index([branche])
+}
+
+// ============ DEVIS ============
+
+model Devis {
+  id            String    @id @default(cuid())
+  reference     String    @unique // DEV-2026-XXXX
+  clientId      String?
+  client        User?     @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientName    String // snapshot name
+  clientAvatar  String    @default("")
+  branche       String
+  compagnieId   String?
+  compagnie     Compagnie? @relation(fields: [compagnieId], references: [id], onDelete: SetNull)
+  companyName   String
+  produitNom    String    @default("")
+  prime         Int       @default(0) // FCFA
+  garanties     String    @default("") // comma-separated
+  duree         String    @default("12 mois")
+  dateDebut     String
+  statut        String    @default("Brouillon") // Brouillon | Émis | Transformé | Expiré | Refusé
+  agentId       String?
+  agentName     String    @default("")
+  dateCreation  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([statut])
+  @@index([branche])
+  @@index([compagnieId])
+}
+
+// ============ CONTRATS ============
+
+model Contrat {
+  id                  String      @id @default(cuid())
+  reference           String      @unique // CTR-2026-XXXX
+  clientId            String?
+  client              User?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientName          String
+  clientAvatar        String      @default("")
+  branche             String
+  compagnieId         String?
+  compagnie           Compagnie?  @relation(fields: [compagnieId], references: [id], onDelete: SetNull)
+  companyName          String
+  produit             String
+  prime               Int         @default(0)
+  garanties           String      @default("")
+  statut              String      @default("Actif") // Actif | En attente | Suspendu | Résilié
+  dateDebut           String
+  dateFin             String
+  prochainRenouvellement String
+  modePaiement        String      @default("")
+  agentId             String?
+  agentName           String      @default("")
+  devisId             String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  @@index([statut])
+  @@index([branche])
+  @@index([compagnieId])
+}
+
+// ============ SINISTRES ============
+
+model Sinistre {
+  id              String      @id @default(cuid())
+  reference       String      @unique // SIN-2026-XXXX
+  clientId        String?
+  client          User?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientName      String
+  clientAvatar    String      @default("")
+  branche         String
+  compagnieId     String?
+  compagnie       Compagnie?  @relation(fields: [compagnieId], references: [id], onDelete: SetNull)
+  companyName     String
+  contratRef      String
+  description     String
+  montantDemande  Int         @default(0)
+  montantRembourse Int?
+  statut          String      @default("Déclaré") // Déclaré | En instruction | Traité | Validé | Rejeté
+  dateDeclaration String
+  dateTraitement  String?
+  delaiH          Int         @default(0)
+  gestionnaire    String      @default("")
+  pieces          String      @default("") // comma-separated file names
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([statut])
+  @@index([branche])
+  @@index([compagnieId])
+}
+
+// ============ PAIEMENTS ============
+
+model Paiement {
+  id            String      @id @default(cuid())
+  reference     String      @unique // PAY-2026-XXXX
+  clientId      String?
+  client        User?       @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  clientName    String
+  clientAvatar  String      @default("")
+  contratRef    String
+  compagnieId   String?
+  compagnie     Compagnie?  @relation(fields: [compagnieId], references: [id], onDelete: SetNull)
+  companyName   String
+  montant       Int         @default(0) // FCFA
+  commission    Int         @default(0) // FCFA courtage
+  moyen         String      @default("Orange Money") // Orange Money | Wave | Moov Money | Carte bancaire | Virement
+  statut        String      @default("En attente") // Réussi | En attente | Échoué | Remboursé
+  date          String
+  transactionId String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([statut])
+  @@index([compagnieId])
+}
+
+// ============ JOURNAL D'AUDIT ============
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userName    String
+  action      String // ex: CREATE_DEVIS, UPDATE_CONTRAT, DELETE_SINISTRE
+  entity      String // devis | contrat | sinistre | compagnie | paiement | utilisateur
+  entityId    String?
+  details     String   @default("") // JSON string with extra context
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([action])
 }

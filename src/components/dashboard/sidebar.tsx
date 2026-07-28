@@ -146,22 +146,14 @@ export function Sidebar({
           <X className="h-4 w-4" strokeWidth={2.5} />
         </button>
 
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 px-1">
+        {/* Logo — centered, larger, no text */}
+        <div className="flex justify-center px-2 py-2">
           <img
             src="/logo-AAM.png"
-            alt="AAM"
-            className="h-9 w-auto shrink-0 select-none"
-            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.08))' }}
+            alt="AAM — Assistances Assurances Mali"
+            className="h-12 w-auto shrink-0 select-none"
+            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))' }}
           />
-          <div className="flex flex-col leading-tight">
-            <span className="text-[10px] font-medium tracking-wide text-slate-400 dark:text-slate-500">
-              Assistances
-            </span>
-            <span className="text-[10px] font-medium tracking-wide text-slate-400 dark:text-slate-500">
-              Assurances Mali
-            </span>
-          </div>
         </div>
 
         {/* Navigation */}
