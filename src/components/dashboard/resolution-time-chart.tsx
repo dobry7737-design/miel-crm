@@ -1,6 +1,5 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import {
   BarChart,
   Bar,
@@ -12,7 +11,7 @@ import {
   Cell,
 } from 'recharts'
 import { ChartCard } from './chart-card'
-import { api } from '@/lib/api'
+import { useAllSinistres } from '@/lib/hooks'
 
 const BRANCH_COLORS: Record<string, string> = {
   Auto: '#7C3AED',
@@ -43,10 +42,7 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function ResolutionTimeChart() {
-  const { data: resp } = useQuery({
-    queryKey: ['sinistres', {}],
-    queryFn: () => api.getSinistres(),
-  })
+  const { data: resp } = useAllSinistres()
 
   // Group sinistres by branche and compute average delaiH
   const sinistres = resp?.data || []

@@ -1,6 +1,5 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import {
   LineChart,
   Line,
@@ -12,7 +11,7 @@ import {
   Legend,
 } from 'recharts'
 import { ChartCard } from './chart-card'
-import { api } from '@/lib/api'
+import { useAllDevis, useAllContrats } from '@/lib/hooks'
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -36,14 +35,8 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function BugTrendsChart() {
-  const { data: devisResp } = useQuery({
-    queryKey: ['devis', {}],
-    queryFn: () => api.getDevis(),
-  })
-  const { data: contratsResp } = useQuery({
-    queryKey: ['contrats', {}],
-    queryFn: () => api.getContrats(),
-  })
+  const { data: devisResp } = useAllDevis()
+  const { data: contratsResp } = useAllContrats()
 
   // Group by dateCreation (or by branche as fallback)
   const devis = devisResp?.data || []

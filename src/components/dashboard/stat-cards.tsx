@@ -1,6 +1,5 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import {
   ArrowUpRight,
   ArrowDownRight,
@@ -14,7 +13,8 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth, type Role } from '@/lib/auth'
-import { api, formatFCFA } from '@/lib/api'
+import { formatFCFA } from '@/lib/api'
+import { useStats } from '@/lib/hooks'
 import type { LucideIcon } from 'lucide-react'
 
 interface StatCardProps {
@@ -31,10 +31,7 @@ interface StatCardProps {
 
 export function StatCards() {
   const { user } = useAuth()
-  const { data: stats } = useQuery({
-    queryKey: ['stats'],
-    queryFn: () => api.getStats(),
-  })
+  const { data: stats } = useStats()
 
   if (!user) return null
 

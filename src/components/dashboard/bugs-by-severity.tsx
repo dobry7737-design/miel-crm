@@ -1,8 +1,7 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import { ChartCard } from './chart-card'
-import { api } from '@/lib/api'
+import { useStats } from '@/lib/hooks'
 
 const BRANCH_COLORS: Record<string, string> = {
   Auto: 'bg-blue-500',
@@ -13,10 +12,7 @@ const BRANCH_COLORS: Record<string, string> = {
 }
 
 export function BugsBySeverity() {
-  const { data: stats } = useQuery({
-    queryKey: ['stats'],
-    queryFn: () => api.getStats(),
-  })
+  const { data: stats } = useStats()
 
   const raw = stats?.breakdowns?.contratsByBranche || []
   const branches = raw.map((b) => ({

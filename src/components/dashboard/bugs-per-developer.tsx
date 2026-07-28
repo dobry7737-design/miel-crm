@@ -1,8 +1,7 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import { ChartCard } from './chart-card'
-import { api } from '@/lib/api'
+import { useAllDevis } from '@/lib/hooks'
 
 const AVATAR_COLORS = [
   'bg-purple-100 text-purple-600',
@@ -17,10 +16,7 @@ function initialsFor(name: string): string {
 }
 
 export function BugsPerDeveloper() {
-  const { data: resp } = useQuery({
-    queryKey: ['devis', {}],
-    queryFn: () => api.getDevis(),
-  })
+  const { data: resp } = useAllDevis()
 
   // Group devis by agentName
   const devis = resp?.data || []

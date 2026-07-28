@@ -1,10 +1,10 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import { ChevronRight } from 'lucide-react'
 import { ChartCard } from './chart-card'
 import { useNav } from '@/lib/nav'
-import { api, formatFCFA } from '@/lib/api'
+import { formatFCFA } from '@/lib/api'
+import { useAllDevis } from '@/lib/hooks'
 
 const AVATAR_COLORS: Record<string, string> = {
   IC: 'bg-violet-500',
@@ -21,10 +21,7 @@ const AVATAR_COLORS: Record<string, string> = {
 
 export function RecentActivity() {
   const { setPage } = useNav()
-  const { data: resp } = useQuery({
-    queryKey: ['devis', {}],
-    queryFn: () => api.getDevis(),
-  })
+  const { data: resp } = useAllDevis()
 
   const devis = (resp?.data || []).slice(0, 6)
 

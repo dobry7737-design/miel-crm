@@ -1,6 +1,5 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import {
   AreaChart,
   Area,
@@ -29,7 +28,8 @@ import {
 } from 'lucide-react'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { ChartCard } from '@/components/dashboard/chart-card'
-import { api, formatFCFA } from '@/lib/api'
+import { formatFCFA } from '@/lib/api'
+import { useStats, useAllDevis, useAllContrats } from '@/lib/hooks'
 
 const BRANCH_COLORS: Record<string, string> = {
   Auto: '#3B82F6',
@@ -48,18 +48,9 @@ const STATUT_COLORS: Record<string, string> = {
 }
 
 export function AnalyticsPage() {
-  const { data: stats } = useQuery({
-    queryKey: ['stats'],
-    queryFn: () => api.getStats(),
-  })
-  const { data: devisResp } = useQuery({
-    queryKey: ['devis', {}],
-    queryFn: () => api.getDevis(),
-  })
-  const { data: contratsResp } = useQuery({
-    queryKey: ['contrats', {}],
-    queryFn: () => api.getContrats(),
-  })
+  const { data: stats } = useStats()
+  const { data: devisResp } = useAllDevis()
+  const { data: contratsResp } = useAllContrats()
 
   const t = stats?.totals
   const f = stats?.financials

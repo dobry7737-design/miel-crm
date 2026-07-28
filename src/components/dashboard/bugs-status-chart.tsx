@@ -1,9 +1,8 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { ChartCard } from './chart-card'
-import { api } from '@/lib/api'
+import { useStats } from '@/lib/hooks'
 
 const STATUT_COLORS: Record<string, string> = {
   'Déclaré': '#3B82F6',
@@ -14,10 +13,7 @@ const STATUT_COLORS: Record<string, string> = {
 }
 
 export function BugsStatusChart() {
-  const { data: stats } = useQuery({
-    queryKey: ['stats'],
-    queryFn: () => api.getStats(),
-  })
+  const { data: stats } = useStats()
 
   const raw = stats?.breakdowns?.sinistresByStatut || []
   const data = raw.map((s) => ({

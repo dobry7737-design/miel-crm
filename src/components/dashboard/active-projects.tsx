@@ -1,10 +1,9 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
 import { ChevronRight } from 'lucide-react'
 import { ChartCard } from './chart-card'
 import { useNav } from '@/lib/nav'
-import { api } from '@/lib/api'
+import { useAllCompagnies } from '@/lib/hooks'
 
 const BADGE_COLORS: Record<string, string> = {
   Actif: 'bg-emerald-500',
@@ -14,10 +13,7 @@ const BADGE_COLORS: Record<string, string> = {
 
 export function ActiveProjects() {
   const { setPage } = useNav()
-  const { data: resp } = useQuery({
-    queryKey: ['compagnies', {}],
-    queryFn: () => api.getCompagnies(),
-  })
+  const { data: resp } = useAllCompagnies()
 
   const compagnies = (resp?.data || [])
     .filter((c) => c.statut === 'Actif')
