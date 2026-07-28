@@ -147,16 +147,19 @@ export function Sidebar({
         </button>
 
         {/* Logo */}
-        <div className="flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 shadow-md shadow-blue-500/30">
-            <ShieldCheck className="h-5 w-5 text-white" strokeWidth={2.5} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-base font-bold tracking-tight text-slate-900 dark:text-slate-100">
-              AAM
+        <div className="flex items-center gap-2.5 px-1">
+          <img
+            src="/logo-AAM.png"
+            alt="AAM"
+            className="h-9 w-auto shrink-0 select-none"
+            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.08))' }}
+          />
+          <div className="flex flex-col leading-tight">
+            <span className="text-[10px] font-medium tracking-wide text-slate-400 dark:text-slate-500">
+              Assistances
             </span>
-            <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-              Assistances Assurances Mali
+            <span className="text-[10px] font-medium tracking-wide text-slate-400 dark:text-slate-500">
+              Assurances Mali
             </span>
           </div>
         </div>
