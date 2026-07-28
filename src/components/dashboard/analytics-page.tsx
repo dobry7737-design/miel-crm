@@ -5,16 +5,12 @@ import {
   Area,
   BarChart,
   Bar,
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   Legend,
-  RadialBarChart,
-  RadialBar,
   PieChart,
   Pie,
   Cell,
@@ -65,8 +61,6 @@ const TRANSFORMATION_DATA = [
   { etape: 'Souscription', value: 476, conversion: 3.7 },
   { etape: 'Paiement', value: 412, conversion: 3.2 },
 ]
-
-const DELAI_OBJECTIF = [{ name: 'Délai moyen', value: 38, fill: '#10B981' }]
 
 export function AnalyticsPage() {
   return (
@@ -253,45 +247,7 @@ export function AnalyticsPage() {
       </div>
 
       {/* Bottom row */}
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <ChartCard
-          title="Délai Traitement vs Objectif"
-          subtitle="Engagement 72h"
-          bodyClassName="h-[260px] flex items-center justify-center"
-        >
-          <ResponsiveContainer width="100%" height="100%">
-            <RadialBarChart
-              data={DELAI_OBJECTIF}
-              startAngle={90}
-              endAngle={90 - (38 / 72) * 360}
-              innerRadius={70}
-              outerRadius={100}
-            >
-              <defs>
-                <linearGradient id="delaiGrad" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stopColor="#10B981" />
-                  <stop offset="100%" stopColor="#059669" />
-                </linearGradient>
-              </defs>
-              <RadialBar
-                dataKey="value"
-                cornerRadius={10}
-                fill="url(#delaiGrad)"
-                background={{ fill: '#F1F5F9' }}
-                isAnimationActive={false}
-              />
-            </RadialBarChart>
-          </ResponsiveContainer>
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">38h</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">/ 72h objectif</span>
-            <span className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-600">
-              <Clock className="h-3 w-3" />
-              Délai respecté
-            </span>
-          </div>
-        </ChartCard>
-
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ChartCard
           title="Top Compagnies"
           subtitle="Classement par volume de contrats"
