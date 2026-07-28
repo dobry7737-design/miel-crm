@@ -29,6 +29,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
+import { Pagination } from '@/components/dashboard/pagination'
+import { usePagination } from '@/lib/use-pagination'
 import { SINISTRES_DATA, formatFCFA, type Sinistre, type Branch } from '@/lib/data'
 
 const STAT_CARDS = [
@@ -71,6 +73,9 @@ export function SinistresPage() {
     )
   }, [search])
 
+  const { page, pageSize, total, paged, setPage, setPageSize } =
+    usePagination(filtered, 5, [search])
+
   return (
     <div>
       <PageHeader
@@ -109,14 +114,14 @@ export function SinistresPage() {
         })}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-          <h3 className="text-sm font-semibold text-slate-900">File de sinistres</h3>
-          <span className="text-xs text-slate-400">{filtered.length} résultat(s)</span>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">File de sinistres</h3>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{total} résultat(s)</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50/50 text-xs text-slate-500">
+            <thead className="bg-slate-50/50 text-xs text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
               <tr>
                 <th className="px-5 py-3 text-left font-medium">Référence</th>
                 <th className="px-5 py-3 text-left font-medium">Client</th>
@@ -130,8 +135,8 @@ export function SinistresPage() {
                 <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 ? (
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {paged.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-5 py-12 text-center text-sm text-slate-400">
                     <AlertCircle className="mx-auto mb-2 h-8 w-8 text-slate-300" />
@@ -139,8 +144,8 @@ export function SinistresPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((s) => (
-                  <tr key={s.id} className="transition hover:bg-slate-50/50">
+                paged.map((s) => (
+                  <tr key={s.id} className="transition hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                     <td className="px-5 py-3">
                       <span className="font-mono text-xs font-semibold text-blue-600">{s.reference}</span>
                     </td>
@@ -182,6 +187,13 @@ export function SinistresPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       {/* View Modal */}

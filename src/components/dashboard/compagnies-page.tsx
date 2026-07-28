@@ -27,6 +27,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
+import { Pagination } from '@/components/dashboard/pagination'
+import { usePagination } from '@/lib/use-pagination'
 import { COMPAGNIES_DATA, type Compagnie } from '@/lib/data'
 
 const STAT_CARDS = [
@@ -66,6 +68,9 @@ export function CompagniesPage() {
       (c) => c.nom.toLowerCase().includes(q) || c.agrement.toLowerCase().includes(q)
     )
   }, [search])
+
+  const { page, pageSize, total, paged, setPage, setPageSize } =
+    usePagination(filtered, 8, [search])
 
   return (
     <div>
@@ -110,7 +115,7 @@ export function CompagniesPage() {
 
       {/* Cards grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filtered.map((c) => (
+        {paged.map((c) => (
           <div
             key={c.id}
             className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 transition hover:shadow-md"
@@ -177,6 +182,18 @@ export function CompagniesPage() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Pagination */}
+      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30 dark:border-slate-800 dark:bg-slate-900">
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[8, 16, 32]}
+        />
       </div>
 
       {/* View Modal */}

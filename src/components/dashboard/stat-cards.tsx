@@ -273,9 +273,11 @@ function StatCard({
 }: StatCardProps) {
   const hasTrend = trend > 0
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 transition hover:shadow-md hover:shadow-slate-200/70">
+    <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 transition hover:shadow-md hover:shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30 dark:hover:shadow-slate-950/50">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-500">{label}</span>
+        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+          {label}
+        </span>
         <div
           className={cn(
             'flex h-9 w-9 items-center justify-center rounded-lg',
@@ -286,10 +288,10 @@ function StatCard({
         </div>
       </div>
       <div className="flex items-end justify-between">
-        <span className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+        <span className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
           {value}
           {unit && (
-            <span className="ml-1 text-sm font-semibold text-slate-400">
+            <span className="ml-1 text-sm font-semibold text-slate-400 dark:text-slate-500">
               {unit}
             </span>
           )}
@@ -298,7 +300,7 @@ function StatCard({
           <span
             className={cn(
               'flex items-center gap-0.5 text-xs font-semibold',
-              trendUp ? 'text-emerald-600' : 'text-rose-500'
+              trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
             )}
           >
             {trendUp ? (
@@ -312,7 +314,7 @@ function StatCard({
         ) : null}
       </div>
       {trendLabel && (
-        <p className="text-xs text-slate-400">{trendLabel}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500">{trendLabel}</p>
       )}
     </div>
   )

@@ -51,7 +51,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen w-full overflow-hidden bg-slate-50">
+    <div className="relative flex min-h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-950">
       {/* Background image (left side) */}
       <div className="relative hidden w-1/2 lg:block">
         <div
@@ -124,10 +124,10 @@ export function LoginPage() {
 
           {/* Heading */}
           <div className="mb-6">
-            <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               Connexion à votre espace
             </h2>
-            <p className="mt-1.5 text-sm text-slate-500">
+            <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
               Accédez à votre tableau de bord en fonction de votre profil
               utilisateur.
             </p>
@@ -135,7 +135,7 @@ export function LoginPage() {
 
           {/* Role selector (RBAC) */}
           <div className="mb-6">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Sélectionnez votre profil (RBAC)
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -150,8 +150,8 @@ export function LoginPage() {
                     className={cn(
                       'group flex items-start gap-3 rounded-xl border p-3 text-left transition-all',
                       isActive
-                        ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100'
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                        ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100 dark:border-blue-700 dark:bg-blue-900/40 dark:ring-blue-900/40'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 dark:hover:bg-slate-800'
                     )}
                   >
                     <div
@@ -159,7 +159,7 @@ export function LoginPage() {
                         'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition',
                         isActive
                           ? 'bg-blue-500 text-white'
-                          : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                          : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:group-hover:bg-slate-700'
                       )}
                     >
                       <Icon className="h-4 w-4" strokeWidth={2} />
@@ -168,12 +168,12 @@ export function LoginPage() {
                       <p
                         className={cn(
                           'truncate text-sm font-semibold',
-                          isActive ? 'text-blue-700' : 'text-slate-800'
+                          isActive ? 'text-blue-700 dark:text-blue-300' : 'text-slate-800 dark:text-slate-200'
                         )}
                       >
                         {ROLE_LABELS[demo.role]}
                       </p>
-                      <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
+                      <p className="mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
                         {ROLE_DESCRIPTIONS[demo.role]}
                       </p>
                     </div>
@@ -195,12 +195,12 @@ export function LoginPage() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-1.5 block text-sm font-medium text-slate-700"
+                className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300"
               >
                 Adresse email
               </label>
               <div className="relative">
-                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   id="email"
                   type="email"
@@ -208,7 +208,7 @@ export function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="vous@exemple.com"
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 />
               </div>
             </div>
@@ -218,19 +218,19 @@ export function LoginPage() {
               <div className="mb-1.5 flex items-center justify-between">
                 <label
                   htmlFor="password"
-                  className="text-sm font-medium text-slate-700"
+                  className="text-sm font-medium text-slate-700 dark:text-slate-300"
                 >
                   Mot de passe
                 </label>
                 <button
                   type="button"
-                  className="text-xs font-medium text-blue-600 transition hover:text-blue-700"
+                  className="text-xs font-medium text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   Mot de passe oublié ?
                 </button>
               </div>
               <div className="relative">
-                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -238,12 +238,12 @@ export function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-10 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300"
                   aria-label="Toggle password visibility"
                 >
                   {showPassword ? (
@@ -257,16 +257,16 @@ export function LoginPage() {
 
             {/* Remember */}
             <div className="flex items-center justify-between">
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                 <input
                   type="checkbox"
                   checked={remember}
                   onChange={(e) => setRemember(e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900"
                 />
                 Rester connecté
               </label>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-400 dark:text-slate-500">
                 2FA requise pour Admin/Agent
               </span>
             </div>
@@ -290,7 +290,7 @@ export function LoginPage() {
           </form>
 
           {/* Footer note */}
-          <p className="mt-6 text-center text-xs text-slate-400">
+          <p className="mt-6 text-center text-xs text-slate-400 dark:text-slate-500">
             Connexion sécurisée · Données chiffrées TLS · Conforme CIMA
             <br />
             En vous connectant, vous acceptez les CGU de la plateforme AAM.

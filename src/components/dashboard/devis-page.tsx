@@ -14,6 +14,7 @@ import { PageHeader } from '@/components/dashboard/page-header'
 import { StatutBadge } from '@/components/dashboard/statut-badge'
 import { BranchBadge } from '@/components/dashboard/avatar'
 import { DevisWizardModal } from '@/components/dashboard/devis-wizard-modal'
+import { Pagination } from '@/components/dashboard/pagination'
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ import { DEVIS_DATA, formatFCFA, type Devis } from '@/lib/data'
 import { useAuth } from '@/lib/auth'
 import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
+import { usePagination } from '@/lib/use-pagination'
 
 const STAT_CARDS = [
   { label: 'Total devis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50' },
@@ -68,6 +70,9 @@ export function DevisPage() {
     )
   }, [search])
 
+  const { page, pageSize, total, paged, setPage, setPageSize } =
+    usePagination(filtered, 5, [search])
+
   return (
     <div>
       <PageHeader
@@ -108,18 +113,18 @@ export function DevisPage() {
       </div>
 
       {/* Devis table */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
-          <h3 className="text-sm font-semibold text-slate-900">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             Liste des devis
           </h3>
-          <span className="text-xs text-slate-400">
-            {filtered.length} résultat(s)
+          <span className="text-xs text-slate-400 dark:text-slate-500">
+            {total} résultat(s)
           </span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50/50 text-xs text-slate-500">
+            <thead className="bg-slate-50/50 text-xs text-slate-500 dark:bg-slate-900/60 dark:text-slate-400">
               <tr>
                 <th className="px-5 py-3 text-left font-medium">Référence</th>
                 <th className="px-5 py-3 text-left font-medium">Client</th>
@@ -132,8 +137,8 @@ export function DevisPage() {
                 <th className="px-5 py-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filtered.length === 0 ? (
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+              {paged.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-5 py-12 text-center text-sm text-slate-400">
                     <AlertCircle className="mx-auto mb-2 h-8 w-8 text-slate-300" />
@@ -141,8 +146,8 @@ export function DevisPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((d) => (
-                  <tr key={d.id} className="transition hover:bg-slate-50/50">
+                paged.map((d) => (
+                  <tr key={d.id} className="transition hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                     <td className="px-5 py-3">
                       <span className="font-mono text-xs font-semibold text-blue-600">
                         {d.reference}
@@ -192,6 +197,13 @@ export function DevisPage() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <DevisWizardModal open={wizardOpen} onOpenChange={setWizardOpen} />
@@ -218,7 +230,7 @@ export function DevisPage() {
                     {viewDevis.clientAvatar}
                   </span>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{viewDevis.client}</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{viewDevis.client}</p>
                     <p className="text-xs text-slate-500">{viewDevis.branche} · {viewDevis.compagnie}</p>
                   </div>
                 </div>

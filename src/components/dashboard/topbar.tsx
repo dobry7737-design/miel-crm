@@ -4,6 +4,7 @@ import { Search, RefreshCw, Plus, Bell, Menu } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
 import { useNav } from '@/lib/nav'
 import { useUI } from '@/lib/ui-store'
+import { ThemeToggle } from '@/components/dashboard/theme-toggle'
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user } = useAuth()
@@ -24,11 +25,11 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const actionLabel = getActionLabel()
 
   return (
-    <header className="relative flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
+    <header className="relative flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900 sm:gap-3 sm:px-6">
       {onMenuClick && (
         <button
           onClick={onMenuClick}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 lg:hidden"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 lg:hidden"
           aria-label="Open menu"
         >
           <Menu className="h-5 w-5" strokeWidth={2} />
@@ -36,28 +37,33 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
       )}
 
       <div className="relative flex-1 max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <input
           type="text"
           placeholder="Rechercher devis, contrats, sinistres, clients..."
-          className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100"
+          className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-900 dark:focus:ring-blue-900/40"
         />
       </div>
 
       <div className="ml-auto flex items-center gap-2">
+        {/* Refresh */}
         <button
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           aria-label="Refresh"
         >
           <RefreshCw className="h-[18px] w-[18px]" strokeWidth={2} />
         </button>
 
+        {/* Theme Toggle */}
+        <ThemeToggle />
+
+        {/* Notifications */}
         <button
-          className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+          className="relative flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           aria-label="Notifications"
         >
           <Bell className="h-[18px] w-[18px]" strokeWidth={2} />
-          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white" />
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-slate-900" />
         </button>
 
         {actionLabel && (

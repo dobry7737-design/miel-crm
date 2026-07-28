@@ -110,6 +110,28 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* AAM app-specific dark mode mappings */
+  --app-bg: oklch(0.165 0 0);             /* slate-950-ish */
+  --app-surface: oklch(0.205 0 0);       /* card / panel */
+  --app-surface-2: oklch(0.245 0 0);      /* hover surface */
+  --app-border: oklch(0.32 0 0);         /* slate-700-ish */
+  --app-text: oklch(0.96 0 0);           /* slate-100 */
+  --app-text-muted: oklch(0.62 0 0);     /* slate-400 */
+  --app-text-dim: oklch(0.48 0 0);       /* slate-500 */
+  --app-input-bg: oklch(0.245 0 0);
+}
+
+:root {
+  /* AAM app-specific light mode mappings */
+  --app-bg: oklch(0.98 0 0);             /* slate-50 */
+  --app-surface: oklch(1 0 0);          /* white */
+  --app-surface-2: oklch(0.96 0 0);      /* slate-100 */
+  --app-border: oklch(0.92 0 0);         /* slate-200 */
+  --app-text: oklch(0.13 0 0);           /* slate-900 */
+  --app-text-muted: oklch(0.45 0 0);     /* slate-500 */
+  --app-text-dim: oklch(0.55 0 0);       /* slate-500 */
+  --app-input-bg: oklch(0.97 0 0);
 }
 
 @layer base {
@@ -118,5 +140,51 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Smooth theme transitions */
+html {
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* App-level semantic utility classes for theme-aware colors */
+.bg-app {
+  background-color: var(--app-bg);
+}
+.bg-surface {
+  background-color: var(--app-surface);
+}
+.bg-surface-2 {
+  background-color: var(--app-surface-2);
+}
+.border-app {
+  border-color: var(--app-border);
+}
+.text-app {
+  color: var(--app-text);
+}
+.text-app-muted {
+  color: var(--app-text-muted);
+}
+.text-app-dim {
+  color: var(--app-text-dim);
+}
+
+/* Scrollbar styling */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--app-border);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--app-text-dim);
   }
 }
