@@ -1,5 +1,6 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import {
   BarChart,
   Bar,
@@ -11,13 +12,15 @@ import {
   Cell,
 } from 'recharts'
 import { ChartCard } from './chart-card'
+import { api } from '@/lib/api'
 
-const data = [
-  { name: 'Auto', hours: 28, fill: '#7C3AED' },
-  { name: 'Santé', hours: 14, fill: '#8B5CF6' },
-  { name: 'Habitation', hours: 42, fill: '#A78BFA' },
-  { name: 'Voyage', hours: 18, fill: '#C4B5FD' },
-]
+const BRANCH_COLORS: Record<string, string> = {
+  Auto: '#7C3AED',
+  Santé: '#8B5CF6',
+  Habitation: '#A78BFA',
+  Voyage: '#C4B5FD',
+  Vie: '#C4B5FD',
+}
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
@@ -40,6 +43,25 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function ResolutionTimeChart() {
+  const { data: resp } = useQuery({
+    queryKey: ['sinistres', {}],
+    queryFn: () => api.getSinistres(),
+  })
+
+  // Group sinistres by branche and compute average delaiH
+  const sinistres = resp?.data || []
+  const branchMap: Record<string, { total: number; count: number }> = {}
+  for (const s of sinistres) {
+    if (!branchMap[s.branche]) branchMap[s.branche] = { total: 0, count: 0 }
+    branchMap[s.branche].total += s.delaiH
+    branchMap[s.branche].count++
+  }
+  const data = Object.entries(branchMap).map(([name, v]) => ({
+    name,
+    hours: v.count > 0 ? Math.round(v.total / v.count) : 0,
+    fill: BRANCH_COLORS[name] || '#A78BFA',
+  }))
+
   return (
     <ChartCard
       title="Délai de Traitement Sinistres"
@@ -74,17 +96,9 @@ export function ResolutionTimeChart() {
             axisLine={false}
           />
           <YAxis
-            domain={[0, 72]}
-            ticks={[0, 18, 36, 54, 72]}
             tick={{ fontSize: 11, fill: '#94A3B8' }}
             tickLine={false}
             axisLine={false}
-            label={{
-              value: 'heures',
-              angle: -90,
-              position: 'insideLeft',
-              style: { fontSize: 10, fill: '#94A3B8' },
-            }}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: '#F8FAFC' }} />
           <Bar dataKey="hours" radius={[6, 6, 0, 0]} maxBarSize={48} isAnimationActive={false}>

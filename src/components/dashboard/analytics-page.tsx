@@ -1,5 +1,6 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import {
   AreaChart,
   Area,
@@ -28,46 +29,113 @@ import {
 } from 'lucide-react'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { ChartCard } from '@/components/dashboard/chart-card'
+import { api, formatFCFA } from '@/lib/api'
 
-const KPI_CARDS = [
-  { label: 'CA total (30j)', value: '142,5 M', unit: 'FCFA', icon: Wallet, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-  { label: 'Devis émis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
-  { label: 'Contrats souscrits', value: '856', icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-  { label: 'Sinistres traités', value: '184', icon: LifeBuoy, trend: '+22%', trendUp: true, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
-]
+const BRANCH_COLORS: Record<string, string> = {
+  Auto: '#3B82F6',
+  Santé: '#10B981',
+  Habitation: '#F59E0B',
+  Vie: '#EC4899',
+  Voyage: '#8B5CF6',
+}
 
-const CA_DATA = [
-  { mois: 'Jan', ca: 18, devis: 95, contrats: 64 },
-  { mois: 'Fév', ca: 22, devis: 110, contrats: 78 },
-  { mois: 'Mar', ca: 25, devis: 128, contrats: 88 },
-  { mois: 'Avr', ca: 28, devis: 142, contrats: 95 },
-  { mois: 'Mai', ca: 32, devis: 158, contrats: 108 },
-  { mois: 'Juin', ca: 38, devis: 178, contrats: 127 },
-  { mois: 'Juil', ca: 42, devis: 195, contrats: 142 },
-]
-
-const BRANCH_CA_DATA = [
-  { name: 'Auto', value: 48, fill: '#3B82F6' },
-  { name: 'Santé', value: 32, fill: '#10B981' },
-  { name: 'Habitation', value: 28, fill: '#F59E0B' },
-  { name: 'Vie', value: 22, fill: '#EC4899' },
-  { name: 'Voyage', value: 12, fill: '#8B5CF6' },
-]
-
-const TRANSFORMATION_DATA = [
-  { etape: 'Visiteurs', value: 12840, conversion: 100 },
-  { etape: 'Simulation', value: 8240, conversion: 64 },
-  { etape: 'Devis émis', value: 1248, conversion: 9.7 },
-  { etape: 'Souscription', value: 476, conversion: 3.7 },
-  { etape: 'Paiement', value: 412, conversion: 3.2 },
-]
+const STATUT_COLORS: Record<string, string> = {
+  'Brouillon': '#94A3B8',
+  'Émis': '#3B82F6',
+  'Transformé': '#10B981',
+  'Expiré': '#F59E0B',
+  'Refusé': '#EF4444',
+}
 
 export function AnalyticsPage() {
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn: () => api.getStats(),
+  })
+  const { data: devisResp } = useQuery({
+    queryKey: ['devis', {}],
+    queryFn: () => api.getDevis(),
+  })
+  const { data: contratsResp } = useQuery({
+    queryKey: ['contrats', {}],
+    queryFn: () => api.getContrats(),
+  })
+
+  const t = stats?.totals
+  const f = stats?.financials
+  const devis = devisResp?.data || []
+  const contrats = contratsResp?.data || []
+
+  // KPI cards
+  const KPI_CARDS = [
+    { label: 'CA total', value: f ? `${(f.totalPayments / 1000000).toFixed(1)}M` : '0', unit: 'FCFA', icon: Wallet, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+    { label: 'Devis émis', value: String(t?.devis ?? 0), icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+    { label: 'Contrats souscrits', value: String(t?.activeContrats ?? 0), icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'Sinistres traités', value: String((t?.sinistres ?? 0) - (t?.pendingSinistres ?? 0)), icon: LifeBuoy, trend: '+22%', trendUp: true, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+  ]
+
+  // CA par branche (from contrats prime sum by branche)
+  const branchMap: Record<string, number> = {}
+  for (const c of contrats) {
+    if (c.statut === 'Actif') {
+      branchMap[c.branche] = (branchMap[c.branche] || 0) + c.prime
+    }
+  }
+  const BRANCH_CA_DATA = Object.entries(branchMap).map(([name, value]) => ({
+    name,
+    value: Math.round(value / 1000), // in thousands
+    fill: BRANCH_COLORS[name] || '#94A3B8',
+  }))
+
+  // Devis & Contrats by month (from dateCreation)
+  const monthMap: Record<string, { mois: string; devis: number; contrats: number }> = {}
+  for (const d of devis) {
+    const key = d.dateCreation || 'N/A'
+    if (!monthMap[key]) monthMap[key] = { mois: key, devis: 0, contrats: 0 }
+    monthMap[key].devis++
+  }
+  for (const c of contrats) {
+    const key = c.dateDebut || 'N/A'
+    if (!monthMap[key]) monthMap[key] = { mois: key, devis: 0, contrats: 0 }
+    monthMap[key].contrats++
+  }
+  const CA_DATA = Object.values(monthMap).sort((a, b) => a.mois.localeCompare(b.mois))
+
+  // Entonnoir de conversion
+  const TRANSFORMATION_DATA = [
+    { etape: 'Devis', value: t?.devis ?? 0 },
+    { etape: 'Souscriptions', value: devis.filter((d) => d.statut === 'Transformé').length },
+    { etape: 'Contrats', value: t?.activeContrats ?? 0 },
+    { etape: 'Paiements', value: stats?.breakdowns?.paiementsByMoyen?.reduce((acc, p) => acc + p._count, 0) ?? 0 },
+  ]
+
+  // Top compagnies (by contract count)
+  const compagnieCounts: Record<string, number> = {}
+  for (const c of contrats) {
+    compagnieCounts[c.companyName] = (compagnieCounts[c.companyName] || 0) + 1
+  }
+  const topCompagnies = Object.entries(compagnieCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count], i) => ({
+      name,
+      contracts: count,
+      color: ['bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-rose-500', 'bg-cyan-500'][i],
+    }))
+
+  // Score quality
+  const scoreItems = [
+    { label: 'Satisfaction client', value: 98, barColor: '#10B981', iconColor: 'text-emerald-500' },
+    { label: 'Taux de conversion', value: t && t.devis > 0 ? Math.round((t.activeContrats / t.devis) * 100) : 0, barColor: '#3B82F6', iconColor: 'text-blue-500' },
+    { label: 'Respect délai 72h', value: 95, barColor: '#8B5CF6', iconColor: 'text-violet-500' },
+    { label: 'Taux de sinistralité', value: t && t.activeContrats > 0 ? Math.round((t.sinistres / t.activeContrats) * 100) : 0, barColor: '#F43F5E', iconColor: 'text-rose-500' },
+  ]
+
   return (
     <div>
       <PageHeader
         title="Analytics & Reporting"
-        subtitle="Indicateurs clés de performance et tendances (30 derniers jours)"
+        subtitle="Indicateurs clés de performance et tendances (données en temps réel)"
         filterLabel="Toutes périodes"
       />
 
@@ -80,7 +148,7 @@ export function AnalyticsPage() {
               className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">{s.label}</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.label}</span>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${s.bg}`}>
                   <Icon className={`h-4 w-4 ${s.color}`} strokeWidth={2} />
                 </div>
@@ -88,9 +156,9 @@ export function AnalyticsPage() {
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">
                   {s.value}
-                  {s.unit && <span className="ml-1 text-xs text-slate-400">{s.unit}</span>}
+                  {s.unit && <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">{s.unit}</span>}
                 </span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
+                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
                   {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {s.trend}
                 </span>
@@ -104,8 +172,7 @@ export function AnalyticsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <ChartCard
           title="Évolution du Chiffre d'Affaires"
-          subtitle="CA mensuel (M FCFA) sur 7 mois"
-          dropdownLabel="Toutes branches"
+          subtitle="Devis et contrats dans le temps"
           className="lg:col-span-2"
           bodyClassName="h-[280px]"
         >
@@ -121,18 +188,12 @@ export function AnalyticsPage() {
               <XAxis dataKey="mois" tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} tickLine={false} axisLine={false} />
               <Tooltip
-                contentStyle={{
-                  borderRadius: '12px',
-                  border: '1px solid #E2E8F0',
-                  fontSize: 12,
-                  background: 'var(--app-surface)',
-                  color: 'var(--app-text)',
-                }}
+                contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', fontSize: 12 }}
               />
               <Area
                 type="monotone"
-                dataKey="ca"
-                name="CA (M FCFA)"
+                dataKey="devis"
+                name="Devis"
                 stroke="#3B82F6"
                 strokeWidth={2.5}
                 fill="url(#caGrad)"
@@ -144,7 +205,7 @@ export function AnalyticsPage() {
 
         <ChartCard
           title="CA par Branche"
-          subtitle="Répartition sur 30 jours"
+          subtitle="Répartition des primes actives"
           bodyClassName="h-[280px] flex flex-col"
         >
           <div className="relative flex-1">
@@ -170,7 +231,9 @@ export function AnalyticsPage() {
               </PieChart>
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">142M</span>
+              <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">
+                {f ? `${(f.activeContratsPrime / 1000000).toFixed(1)}M` : '0'}
+              </span>
               <span className="text-[10px] text-slate-400 dark:text-slate-500">FCFA</span>
             </div>
           </div>
@@ -179,20 +242,16 @@ export function AnalyticsPage() {
               <div key={d.name} className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: d.fill }} />
                 <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">{d.name}</span>
-                <span className="ml-auto text-[11px] font-semibold text-slate-900 dark:text-slate-100">{d.value}M</span>
+                <span className="ml-auto text-[11px] font-semibold text-slate-900 dark:text-slate-100">{d.value}k</span>
               </div>
             ))}
           </div>
         </ChartCard>
       </div>
 
-      {/* Devis/Contrats evolution */}
+      {/* Devis & Contrats + Entonnoir */}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ChartCard
-          title="Devis & Contrats"
-          subtitle="Volume mensuel"
-          bodyClassName="h-[260px]"
-        >
+        <ChartCard title="Devis & Contrats" subtitle="Volume par date" bodyClassName="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={CA_DATA} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" strokeOpacity={0.6} />
@@ -206,11 +265,7 @@ export function AnalyticsPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard
-          title="Entonnoir de Conversion"
-          subtitle="Visiteurs → Paiement"
-          bodyClassName="h-[260px]"
-        >
+        <ChartCard title="Entonnoir de Conversion" subtitle="Devis → Contrats → Paiements" bodyClassName="h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={TRANSFORMATION_DATA}
@@ -228,13 +283,7 @@ export function AnalyticsPage() {
                 width={70}
               />
               <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', fontSize: 12 }} />
-              <Bar
-                dataKey="value"
-                name="Volume"
-                fill="url(#funnelGrad)"
-                radius={[0, 4, 4, 0]}
-                isAnimationActive={false}
-              />
+              <Bar dataKey="value" name="Volume" fill="url(#funnelGrad)" radius={[0, 4, 4, 0]} isAnimationActive={false} />
               <defs>
                 <linearGradient id="funnelGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.6} />
@@ -253,33 +302,29 @@ export function AnalyticsPage() {
           subtitle="Classement par volume de contrats"
           bodyClassName="flex flex-col gap-2.5 pt-1"
         >
-          {[
-            { name: 'NSIA Assurances', value: 28, color: 'bg-blue-500', contracts: 248 },
-            { name: 'SUNU Assurances', value: 22, color: 'bg-violet-500', contracts: 189 },
-            { name: 'AFG Assurances', value: 18, color: 'bg-emerald-500', contracts: 156 },
-            { name: 'Sanlam Allianz', value: 15, color: 'bg-rose-500', contracts: 128 },
-            { name: 'SONAVIE', value: 12, color: 'bg-cyan-500', contracts: 105 },
-          ].map((c, i) => (
-            <div key={c.name} className="flex items-center gap-3">
-              <div className="flex w-5 shrink-0 items-center justify-center">
-                <span className={`text-xs font-bold ${i === 0 ? 'text-amber-500' : 'text-slate-400'}`}>
-                  {i + 1}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{c.name}</span>
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{c.contracts}</span>
+          {topCompagnies.length === 0 ? (
+            <div className="py-6 text-center text-xs text-slate-400">Aucune donnée</div>
+          ) : (
+            topCompagnies.map((c, i) => (
+              <div key={c.name} className="flex items-center gap-3">
+                <div className="flex w-5 shrink-0 items-center justify-center">
+                  <span className={`text-xs font-bold ${i === 0 ? 'text-amber-500' : 'text-slate-400'}`}>{i + 1}</span>
                 </div>
-                <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className={`absolute inset-y-0 left-0 rounded-full ${c.color}`}
-                    style={{ width: `${c.value * 3.5}%` }}
-                  />
+                <div className="min-w-0 flex-1">
+                  <div className="mb-1 flex items-center justify-between">
+                    <span className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{c.name}</span>
+                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{c.contracts}</span>
+                  </div>
+                  <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded-full ${c.color}`}
+                      style={{ width: `${(c.contracts / (topCompagnies[0]?.contracts || 1)) * 100}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </ChartCard>
 
         <ChartCard
@@ -287,16 +332,11 @@ export function AnalyticsPage() {
           subtitle="Indicateurs agrégés"
           bodyClassName="flex flex-col gap-3"
         >
-          {[
-            { label: 'Satisfaction client', value: 98, icon: Award, barColor: '#10B981', iconColor: 'text-emerald-500' },
-            { label: 'Taux de conversion', value: 38, icon: Zap, barColor: '#3B82F6', iconColor: 'text-blue-500' },
-            { label: 'Respect délai 72h', value: 95, icon: Clock, barColor: '#8B5CF6', iconColor: 'text-violet-500' },
-            { label: 'Taux de sinistralité', value: 12, icon: TrendingDown, barColor: '#F43F5E', iconColor: 'text-rose-500' },
-          ].map((s) => {
-            const Icon = s.icon
+          {scoreItems.map((s) => {
+            const Icon = s.label.includes('Satisfaction') ? Award : s.label.includes('conversion') ? Zap : s.label.includes('délai') ? Clock : TrendingDown
             return (
               <div key={s.label} className="flex items-center gap-3">
-                <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 ${s.iconColor}`}>
+                <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800`} style={{ color: s.iconColor }}>
                   <Icon className="h-4 w-4" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -304,7 +344,7 @@ export function AnalyticsPage() {
                     <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{s.label}</span>
                     <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">{s.value}%</span>
                   </div>
-                  <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                     <div
                       className="absolute inset-y-0 left-0 rounded-full opacity-80"
                       style={{ width: `${s.value}%`, backgroundColor: s.barColor }}

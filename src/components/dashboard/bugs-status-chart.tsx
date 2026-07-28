@@ -1,18 +1,32 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { ChartCard } from './chart-card'
+import { api } from '@/lib/api'
 
-const data = [
-  { name: 'En cours', value: 47, color: '#3B82F6' },
-  { name: 'En instruction', value: 18, color: '#F59E0B' },
-  { name: 'Traité (≤72h)', value: 64, color: '#10B981' },
-  { name: 'Rejeté', value: 8, color: '#94A3B8' },
-]
-
-const total = data.reduce((acc, d) => acc + d.value, 0)
+const STATUT_COLORS: Record<string, string> = {
+  'Déclaré': '#3B82F6',
+  'En instruction': '#F59E0B',
+  'Traité': '#10B981',
+  'Validé': '#10B981',
+  'Rejeté': '#94A3B8',
+}
 
 export function BugsStatusChart() {
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn: () => api.getStats(),
+  })
+
+  const raw = stats?.breakdowns?.sinistresByStatut || []
+  const data = raw.map((s) => ({
+    name: s.statut,
+    value: s._count,
+    color: STATUT_COLORS[s.statut] || '#94A3B8',
+  }))
+  const total = data.reduce((acc, d) => acc + d.value, 0)
+
   return (
     <ChartCard
       title="Sinistres par Statut"

@@ -1,5 +1,6 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import {
   LineChart,
   Line,
@@ -11,26 +12,13 @@ import {
   Legend,
 } from 'recharts'
 import { ChartCard } from './chart-card'
-
-const data = [
-  { date: 'Sem 1', devis: 28, souscriptions: 18, contrats: 14 },
-  { date: 'Sem 2', devis: 35, souscriptions: 22, contrats: 19 },
-  { date: 'Sem 3', devis: 42, souscriptions: 28, contrats: 24 },
-  { date: 'Sem 4', devis: 38, souscriptions: 25, contrats: 22 },
-  { date: 'Sem 5', devis: 52, souscriptions: 35, contrats: 28 },
-  { date: 'Sem 6', devis: 48, souscriptions: 32, contrats: 26 },
-  { date: 'Sem 7', devis: 62, souscriptions: 42, contrats: 36 },
-  { date: 'Sem 8', devis: 58, souscriptions: 38, contrats: 33 },
-  { date: 'Sem 9', devis: 72, souscriptions: 48, contrats: 42 },
-  { date: 'Sem 10', devis: 85, souscriptions: 58, contrats: 51 },
-  { date: 'Sem 11', devis: 78, souscriptions: 52, contrats: 47 },
-]
+import { api } from '@/lib/api'
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
-      <p className="mb-2 text-xs font-semibold text-slate-900 dark:text-slate-100">{label} · 2026</p>
+      <p className="mb-2 text-xs font-semibold text-slate-900 dark:text-slate-100">{label}</p>
       <div className="flex flex-col gap-1.5">
         {payload.map((entry: any) => (
           <div key={entry.name} className="flex items-center gap-2 text-xs">
@@ -48,10 +36,39 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function BugTrendsChart() {
+  const { data: devisResp } = useQuery({
+    queryKey: ['devis', {}],
+    queryFn: () => api.getDevis(),
+  })
+  const { data: contratsResp } = useQuery({
+    queryKey: ['contrats', {}],
+    queryFn: () => api.getContrats(),
+  })
+
+  // Group by dateCreation (or by branche as fallback)
+  const devis = devisResp?.data || []
+  const contrats = contratsResp?.data || []
+
+  // Create a simple timeline by grouping by dateCreation
+  const dateMap: Record<string, { date: string; devis: number; souscriptions: number; contrats: number }> = {}
+  for (const d of devis) {
+    const key = d.dateCreation || 'N/A'
+    if (!dateMap[key]) dateMap[key] = { date: key, devis: 0, souscriptions: 0, contrats: 0 }
+    dateMap[key].devis++
+    if (d.statut === 'Transformé') dateMap[key].souscriptions++
+  }
+  for (const c of contrats) {
+    const key = c.dateDebut || 'N/A'
+    if (!dateMap[key]) dateMap[key] = { date: key, devis: 0, souscriptions: 0, contrats: 0 }
+    dateMap[key].contrats++
+  }
+
+  const data = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date))
+
   return (
     <ChartCard
       title="Évolution des Devis"
-      subtitle="Devis, souscriptions et contrats sur les 11 dernières semaines"
+      subtitle="Devis, souscriptions et contrats dans le temps"
       dropdownLabel="Toutes branches"
       dropdownItems={['Toutes branches', 'Auto', 'Santé', 'Habitation', 'Voyage', 'Vie']}
       className="xl:flex-[1.4]"
@@ -72,8 +89,6 @@ export function BugTrendsChart() {
             axisLine={false}
           />
           <YAxis
-            domain={[0, 90]}
-            ticks={[0, 15, 30, 45, 60, 75, 90]}
             tick={{ fontSize: 11, fill: '#94A3B8' }}
             tickLine={false}
             axisLine={false}
@@ -111,7 +126,7 @@ export function BugTrendsChart() {
           <Line
             type="monotone"
             dataKey="contrats"
-            name="Contrats Actifs"
+            name="Contrats"
             stroke="#10B981"
             strokeWidth={2.5}
             dot={{ r: 3, fill: '#10B981', strokeWidth: 0 }}
