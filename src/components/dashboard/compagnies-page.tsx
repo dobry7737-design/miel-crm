@@ -32,10 +32,10 @@ import { usePagination } from '@/lib/use-pagination'
 import { COMPAGNIES_DATA, type Compagnie } from '@/lib/data'
 
 const STAT_CARDS = [
-  { label: 'Total compagnies', value: '11', icon: Building2, trend: '+1', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Actives', value: '8', icon: CheckCircle2, trend: '+1', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: 'À valider', value: '3', icon: AlertCircle, trend: '0', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50' },
-  { label: 'Délai moyen (h)', value: '29', icon: Clock, trend: '-12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50' },
+  { label: 'Total compagnies', value: '11', icon: Building2, trend: '+1', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+  { label: 'Actives', value: '8', icon: CheckCircle2, trend: '+1', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+  { label: 'À valider', value: '3', icon: AlertCircle, trend: '0', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+  { label: 'Délai moyen (h)', value: '29', icon: Clock, trend: '-12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
 ]
 
 export function CompagniesPage() {
@@ -93,7 +93,7 @@ export function CompagniesPage() {
           return (
             <div
               key={s.label}
-              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50"
+              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500">{s.label}</span>
@@ -102,7 +102,7 @@ export function CompagniesPage() {
                 </div>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-xl font-bold text-slate-900 sm:text-2xl">{s.value}</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
                 <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
                   {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {s.trend}
@@ -118,53 +118,53 @@ export function CompagniesPage() {
         {paged.map((c) => (
           <div
             key={c.id}
-            className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 transition hover:shadow-md"
+            className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 transition hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30 dark:hover:shadow-slate-950/50"
           >
             <div className="flex items-start gap-3">
               <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-base font-bold text-white ${c.iconColor}`}>
                 {c.initials}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-semibold text-slate-900">{c.nom}</h3>
-                <p className="truncate text-xs text-slate-400">{c.agrement}</p>
+                <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">{c.nom}</h3>
+                <p className="truncate text-xs text-slate-400 dark:text-slate-500">{c.agrement}</p>
               </div>
               <StatutBadge statut={c.statut} />
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5">
-                <p className="text-slate-400">Note</p>
-                <p className="flex items-center gap-1 font-semibold text-slate-800">
+              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
+                <p className="text-slate-400 dark:text-slate-500">Note</p>
+                <p className="flex items-center gap-1 font-semibold text-slate-800 dark:text-slate-200">
                   <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
                   {c.rating > 0 ? c.rating : '—'}
                 </p>
               </div>
-              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5">
-                <p className="text-slate-400">Délai sinistres</p>
-                <p className="font-semibold text-slate-800">{c.delaiTraitement}h</p>
+              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
+                <p className="text-slate-400 dark:text-slate-500">Délai sinistres</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">{c.delaiTraitement}h</p>
               </div>
-              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5">
-                <p className="text-slate-400">Produits</p>
-                <p className="font-semibold text-slate-800">{c.produits}</p>
+              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
+                <p className="text-slate-400 dark:text-slate-500">Produits</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">{c.produits}</p>
               </div>
-              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5">
-                <p className="text-slate-400">Sinistres actifs</p>
-                <p className="font-semibold text-slate-800">{c.sinistresActifs}</p>
+              <div className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
+                <p className="text-slate-400 dark:text-slate-500">Sinistres actifs</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">{c.sinistresActifs}</p>
               </div>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-1">
               {c.branches.map((b) => (
-                <span key={b} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">
+                <span key={b} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   {b}
                 </span>
               ))}
             </div>
 
-            <div className="mt-4 flex justify-end gap-1 border-t border-slate-100 pt-3">
+            <div className="mt-4 flex justify-end gap-1 border-t border-slate-100 pt-3 dark:border-slate-800">
               <button
                 onClick={() => setView(c)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-blue-600"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                 aria-label="Voir"
               >
                 <Eye className="h-3.5 w-3.5" strokeWidth={2} />
@@ -174,7 +174,7 @@ export function CompagniesPage() {
                   setEditing(c)
                   setEditOpen(true)
                 }}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-emerald-600"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-emerald-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
                 aria-label="Modifier"
               >
                 <Edit className="h-3.5 w-3.5" strokeWidth={2} />
@@ -185,7 +185,7 @@ export function CompagniesPage() {
       </div>
 
       {/* Pagination */}
-      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30 dark:border-slate-800 dark:bg-slate-900">
+      <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30">
         <Pagination
           page={page}
           pageSize={pageSize}
@@ -198,7 +198,7 @@ export function CompagniesPage() {
 
       {/* View Modal */}
       <Dialog open={!!view} onOpenChange={(v) => !v && setView(null)}>
-        <DialogContent className="max-w-lg bg-white">
+        <DialogContent className="max-w-lg bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Building2 className="h-4 w-4 text-blue-600" />
@@ -221,12 +221,12 @@ export function CompagniesPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Branches couvertes
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {view.branches.map((b) => (
-                    <span key={b} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                    <span key={b} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       {b}
                     </span>
                   ))}
@@ -234,17 +234,17 @@ export function CompagniesPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl border border-slate-200 p-3">
-                  <p className="text-xs text-slate-500">Produits actifs</p>
-                  <p className="text-2xl font-bold text-slate-900">{view.produits}</p>
+                <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Produits actifs</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{view.produits}</p>
                 </div>
-                <div className="rounded-xl border border-slate-200 p-3">
-                  <p className="text-xs text-slate-500">Sinistres en cours</p>
-                  <p className="text-2xl font-bold text-slate-900">{view.sinistresActifs}</p>
+                <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Sinistres en cours</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{view.sinistresActifs}</p>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <Button variant="outline" size="sm" onClick={() => setView(null)}>
                   Fermer
                 </Button>
@@ -279,8 +279,8 @@ export function CompagniesPage() {
 function InfoField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="text-sm font-medium text-slate-800">{value}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500">{label}</p>
+      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{value}</p>
     </div>
   )
 }
@@ -349,7 +349,7 @@ function CompagnieEditModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg bg-white">
+      <DialogContent className="max-w-lg bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
         <DialogHeader>
           <DialogTitle className="text-base">
             {completed
@@ -370,8 +370,8 @@ function CompagnieEditModal({
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
               <PartyPopper className="h-7 w-7 text-emerald-600" strokeWidth={2} />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Compagnie enregistrée !</h3>
-            <p className="max-w-sm text-sm text-slate-500">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Compagnie enregistrée !</h3>
+            <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
               {editing ? 'Les informations ont été mises à jour.' : `${form.nom} a été ajoutée au référentiel des compagnies partenaires.`}
             </p>
             <Button size="sm" onClick={() => handleClose(false)} className="mt-2 bg-blue-600 hover:bg-blue-700">
@@ -381,7 +381,7 @@ function CompagnieEditModal({
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                 Nom de la compagnie <span className="text-rose-500">*</span>
               </label>
               <input
@@ -389,12 +389,12 @@ function CompagnieEditModal({
                 value={form.nom}
                 onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
                 placeholder="ex: NSIA Assurances"
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                 Agrément CIMA <span className="text-rose-500">*</span>
               </label>
               <input
@@ -402,13 +402,13 @@ function CompagnieEditModal({
                 value={form.agrement}
                 onChange={(e) => setForm((f) => ({ ...f, agrement: e.target.value }))}
                 placeholder="ex: CIMA-NSIA-2018"
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                   Contact <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -416,11 +416,11 @@ function CompagnieEditModal({
                   value={form.contact}
                   onChange={(e) => setForm((f) => ({ ...f, contact: e.target.value }))}
                   placeholder="Nom du référent"
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                   Email <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -428,25 +428,25 @@ function CompagnieEditModal({
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="contact@compagnie.ml"
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600">Téléphone</label>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Téléphone</label>
                 <input
                   type="text"
                   value={form.telephone}
                   onChange={(e) => setForm((f) => ({ ...f, telephone: e.target.value }))}
                   placeholder="+223 ..."
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600">Statut</label>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Statut</label>
                 <select
                   value={form.statut}
                   onChange={(e) => setForm((f) => ({ ...f, statut: e.target.value as typeof form.statut }))}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 >
                   <option value="À valider">À valider</option>
                   <option value="Actif">Actif</option>
@@ -456,7 +456,7 @@ function CompagnieEditModal({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                 Couleur d&apos;affichage
               </label>
               <div className="flex flex-wrap gap-2">
@@ -474,7 +474,7 @@ function CompagnieEditModal({
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                 Branches couvertes
               </label>
               <div className="flex flex-wrap gap-2">
@@ -485,8 +485,8 @@ function CompagnieEditModal({
                     onClick={() => toggleBranch(b)}
                     className={`rounded-lg border px-3 py-1 text-xs font-medium transition ${
                       form.branches.includes(b)
-                        ? 'border-blue-300 bg-blue-50 text-blue-700'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                        ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
                     }`}
                   >
                     {b}
@@ -495,7 +495,7 @@ function CompagnieEditModal({
               </div>
             </div>
 
-            <DialogFooter className="border-t border-slate-100 pt-4">
+            <DialogFooter className="border-t border-slate-100 pt-4 dark:border-slate-800">
               <Button variant="outline" size="sm" onClick={() => handleClose(false)}>
                 Annuler
               </Button>

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { useAuth, ROLE_LABELS, ROLE_DESCRIPTIONS, type Role } from '@/lib/auth'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/dashboard/theme-toggle'
 
 const ROLE_DEMOS: { role: Role; icon: typeof Users; email: string; password: string }[] = [
   { role: 'admin', icon: ShieldCheck, email: 'admin@aam.ml', password: 'admin' },
@@ -107,7 +108,11 @@ export function LoginPage() {
       </div>
 
       {/* Right side - login form */}
-      <div className="flex w-full flex-col items-center justify-center px-6 py-10 sm:px-12 lg:w-1/2">
+      <div className="relative flex w-full flex-col items-center justify-center px-6 py-10 sm:px-12 lg:w-1/2">
+        {/* Theme toggle - top-right corner */}
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+          <ThemeToggle />
+        </div>
         <div className="w-full max-w-md">
           {/* Mobile brand */}
           <div className="mb-8 flex items-center gap-3 lg:hidden">
@@ -115,10 +120,10 @@ export function LoginPage() {
               <ShieldCheck className="h-6 w-6 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <h2 className="text-lg font-bold tracking-tight text-slate-900">
+              <h2 className="text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
                 AAM
               </h2>
-              <p className="text-xs text-slate-500">Assistances Assurances Mali</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Assistances Assurances Mali</p>
             </div>
           </div>
 

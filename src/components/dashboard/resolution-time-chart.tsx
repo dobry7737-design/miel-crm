@@ -22,8 +22,8 @@ const data = [
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-      <p className="mb-1 text-xs font-semibold text-slate-900">
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+      <p className="mb-1 text-xs font-semibold text-slate-900 dark:text-slate-100">
         Branche {label}
       </p>
       <div className="flex items-center gap-2 text-xs">
@@ -31,10 +31,10 @@ function CustomTooltip({ active, payload, label }: any) {
           className="h-2 w-2 rounded-full"
           style={{ backgroundColor: payload[0].payload.fill }}
         />
-        <span className="text-slate-500">Délai moyen:</span>
-        <span className="font-semibold text-slate-900">{payload[0].value}h</span>
+        <span className="text-slate-500 dark:text-slate-400">Délai moyen:</span>
+        <span className="font-semibold text-slate-900 dark:text-slate-100">{payload[0].value}h</span>
       </div>
-      <p className="mt-1 text-[10px] text-slate-400">Engagement: 72h max</p>
+      <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">Engagement: 72h max</p>
     </div>
   )
 }

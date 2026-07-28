@@ -39,7 +39,7 @@ export function ParametresPage() {
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_1fr]">
         {/* Tabs sidebar */}
-        <aside className="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50">
+        <aside className="flex flex-col gap-1 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30">
           {TABS.map((t) => {
             const Icon = t.icon
             const isActive = tab === t.id
@@ -50,12 +50,12 @@ export function ParametresPage() {
                 className={cn(
                   'flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
                   isActive
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'
                 )}
               >
                 <Icon
-                  className={cn('h-4 w-4', isActive ? 'text-blue-600' : 'text-slate-400')}
+                  className={cn('h-4 w-4', isActive ? 'text-blue-600 dark:text-blue-300' : 'text-slate-400 dark:text-slate-500')}
                   strokeWidth={2}
                 />
                 {t.label}
@@ -65,7 +65,7 @@ export function ParametresPage() {
         </aside>
 
         {/* Tab content */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50">
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30">
           {tab === 'general' && <GeneralTab />}
           {tab === 'scoring' && <ScoringTab />}
           {tab === 'securite' && <SecurityTab />}
@@ -81,8 +81,8 @@ export function ParametresPage() {
 function SectionTitle({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="mb-4">
-      <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-      <p className="mt-0.5 text-sm text-slate-500">{desc}</p>
+      <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
+      <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{desc}</p>
     </div>
   )
 }
@@ -102,9 +102,9 @@ function SaveButton({ onSave }: { onSave?: () => void }) {
   }
 
   return (
-    <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+    <div className="mt-6 flex items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
       {saved && (
-        <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600">
+        <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
           <CheckCircle2 className="h-3.5 w-3.5" />
           Enregistré
         </span>
@@ -141,9 +141,9 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-medium text-slate-700">{label}</label>
+      <label className="mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300">{label}</label>
       {children}
-      {hint && <p className="mt-1 text-xs text-slate-400">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{hint}</p>}
     </div>
   )
 }
@@ -156,7 +156,7 @@ function Input({ defaultValue = '', placeholder = '' }: { defaultValue?: string;
       value={value}
       onChange={(e) => setValue(e.target.value)}
       placeholder={placeholder}
-      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
     />
   )
 }
@@ -167,7 +167,7 @@ function Select({ defaultValue, options }: { defaultValue: string; options: { va
     <select
       value={value}
       onChange={(e) => setValue(e.target.value)}
-      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+      className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
@@ -181,20 +181,20 @@ function Toggle({ defaultChecked = false, label, desc }: { defaultChecked?: bool
   return (
     <div className="flex items-start justify-between gap-4 py-3">
       <div>
-        <p className="text-sm font-medium text-slate-800">{label}</p>
-        {desc && <p className="mt-0.5 text-xs text-slate-500">{desc}</p>}
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
+        {desc && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{desc}</p>}
       </div>
       <button
         type="button"
         onClick={() => setChecked((c) => !c)}
         className={cn(
           'relative h-6 w-11 shrink-0 rounded-full transition',
-          checked ? 'bg-blue-600' : 'bg-slate-200'
+          checked ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'
         )}
       >
         <span
           className={cn(
-            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition',
+            'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition dark:bg-slate-100',
             checked ? 'left-5' : 'left-0.5'
           )}
         />
@@ -284,7 +284,7 @@ function ScoringTab() {
           <input type="range" min={0} max={100} defaultValue={10} className="w-full" />
         </Field>
       </div>
-      <div className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
+      <div className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
         <p>
           <strong>Formule actuelle :</strong> Score = 0,4 × Prix + 0,35 × Garanties + 0,15 × Note + 0,1 × Délai
         </p>
@@ -391,15 +391,15 @@ function ApparenceTab() {
       </div>
       <div className="mt-4">
         <Field label="Logo de la plateforme">
-          <div className="flex items-center gap-4 rounded-lg border border-dashed border-slate-300 p-4">
+          <div className="flex items-center gap-4 rounded-lg border border-dashed border-slate-300 p-4 dark:border-slate-700">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600">
               <ShieldCheck className="h-6 w-6 text-white" />
             </div>
             <div>
-              <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
+              <button className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                 Téléverser un nouveau logo
               </button>
-              <p className="mt-0.5 text-xs text-slate-500">PNG, SVG · max 1 Mo · 256×256 px recommandé</p>
+              <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">PNG, SVG · max 1 Mo · 256×256 px recommandé</p>
             </div>
           </div>
         </Field>
@@ -434,18 +434,18 @@ function IntegrationsTab() {
           { name: 'Wave', status: 'connecté', color: 'text-emerald-600', bg: 'bg-emerald-50', desc: 'Wallet Wave - Mali' },
           { name: 'Moov Money', status: 'connecté', color: 'text-emerald-600', bg: 'bg-emerald-50', desc: 'Moov Africa - Mali' },
           { name: 'CinetPay', status: 'en attente', color: 'text-amber-600', bg: 'bg-amber-50', desc: 'Passerelle de paiement carte bancaire' },
-          { name: 'PayDunya', status: 'déconnecté', color: 'text-slate-500', bg: 'bg-slate-100', desc: 'Passerelle alternative carte bancaire' },
+          { name: 'PayDunya', status: 'déconnecté', color: 'text-slate-500', bg: 'bg-slate-100 dark:bg-slate-800', desc: 'Passerelle alternative carte bancaire' },
           { name: 'Twilio SMS', status: 'connecté', color: 'text-emerald-600', bg: 'bg-emerald-50', desc: 'Envoi de SMS transactionnels' },
           { name: 'SendGrid Email', status: 'connecté', color: 'text-emerald-600', bg: 'bg-emerald-50', desc: 'Envoi d\'emails transactionnels' },
         ].map((int) => (
-          <div key={int.name} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4">
+          <div key={int.name} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800/60">
             <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-50">
-                <Globe className="h-5 w-5 text-slate-600" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-900">
+                <Globe className="h-5 w-5 text-slate-600 dark:text-slate-400" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-slate-900">{int.name}</p>
-                <p className="text-xs text-slate-500">{int.desc}</p>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{int.name}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{int.desc}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -453,14 +453,14 @@ function IntegrationsTab() {
                 <span className="h-1.5 w-1.5 rounded-full bg-current" />
                 {int.status}
               </span>
-              <button className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50">
+              <button className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800">
                 Configurer
               </button>
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-700">
+      <div className="mt-5 rounded-xl bg-blue-50 p-4 text-sm text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
         <Key className="mr-1.5 inline h-4 w-4" />
         Clés d&apos;API et secrets gérés en environnement sécurisé (.env) — Non affichés.
       </div>

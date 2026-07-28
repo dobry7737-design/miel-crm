@@ -209,12 +209,12 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl bg-white p-0 sm:max-w-3xl">
-        <DialogHeader className="border-b border-slate-100 px-6 py-4">
-          <DialogTitle className="text-base font-bold text-slate-900">
+      <DialogContent className="max-w-2xl bg-slate-50 p-0 dark:bg-slate-900 dark:text-slate-100 sm:max-w-3xl">
+        <DialogHeader className="border-b border-slate-100 px-6 py-4 dark:border-slate-800">
+          <DialogTitle className="text-base font-bold text-slate-900 dark:text-slate-100">
             {completed ? 'Devis créé avec succès' : 'Nouveau devis — Comparateur'}
           </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
+          <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
             {completed
               ? 'Votre demande de devis a été transmise aux compagnies partenaires.'
               : 'Parcours guidé en 4 étapes — Comparez les offres en 30 secondes'}
@@ -227,17 +227,17 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
               <PartyPopper className="h-8 w-8 text-emerald-600" strokeWidth={2} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-slate-900">Devis transmis !</h3>
-              <p className="mt-1 max-w-md text-sm text-slate-500">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Devis transmis !</h3>
+              <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
                 Votre demande a été envoyée à 11 compagnies partenaires agréées CIMA. Vous recevrez les offres par email sous 5 minutes.
               </p>
             </div>
-            <div className="rounded-xl bg-slate-50 p-4 text-left">
-              <p className="text-xs font-semibold text-slate-700">Récapitulatif :</p>
-              <ul className="mt-2 space-y-1 text-xs text-slate-600">
-                <li>• Branche : <span className="font-semibold">{data.branche}</span></li>
-                <li>• Garanties : <span className="font-semibold">{data.garanties.length} sélectionnée(s)</span></li>
-                <li>• Durée : <span className="font-semibold">{data.duree}</span></li>
+            <div className="rounded-xl bg-slate-50 p-4 text-left dark:bg-slate-800">
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Récapitulatif :</p>
+              <ul className="mt-2 space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                <li>• Branche : <span className="font-semibold dark:text-slate-100">{data.branche}</span></li>
+                <li>• Garanties : <span className="font-semibold dark:text-slate-100">{data.garanties.length} sélectionnée(s)</span></li>
+                <li>• Durée : <span className="font-semibold dark:text-slate-100">{data.duree}</span></li>
                 <li>• Date d&apos;effet : <span className="font-semibold">{data.dateDebut}</span></li>
               </ul>
             </div>
@@ -264,7 +264,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
         ) : (
           <div className="flex flex-col">
             {/* Progress steps */}
-            <div className="border-b border-slate-100 px-6 py-3">
+            <div className="border-b border-slate-100 px-6 py-3 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 {STEPS.map((label, i) => (
                   <div key={label} className="flex flex-1 items-center">
@@ -283,7 +283,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                     <div className="ml-2 hidden flex-1 sm:block">
                       <p className={cn(
                         'text-xs font-medium',
-                        i <= step ? 'text-slate-900' : 'text-slate-400'
+                        i <= step ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'
                       )}>
                         {label}
                       </p>
@@ -300,7 +300,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
             </div>
 
             {/* Step content */}
-            <div className="max-h-[60vh] overflow-y-auto px-6 py-5">
+            <div className="max-h-[60vh] overflow-y-auto px-6 py-5 text-slate-800 dark:text-slate-200">
               {step === 0 && (
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   {BRANCHES.map((b) => {
@@ -313,8 +313,8 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                         className={cn(
                           'flex items-start gap-3 rounded-xl border p-4 text-left transition-all',
                           isActive
-                            ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100'
-                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                            ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100 dark:border-blue-700 dark:bg-blue-900/40 dark:ring-blue-900/40'
+                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600 dark:hover:bg-slate-800'
                         )}
                       >
                         <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-white', b.color)}>
@@ -323,11 +323,11 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                         <div className="min-w-0 flex-1">
                           <p className={cn(
                             'text-sm font-semibold',
-                            isActive ? 'text-blue-700' : 'text-slate-900'
+                            isActive ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-slate-100'
                           )}>
                             {b.label}
                           </p>
-                          <p className="mt-0.5 text-xs text-slate-500">{b.desc}</p>
+                          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{b.desc}</p>
                         </div>
                         {isActive && (
                           <Check className="h-5 w-5 text-blue-500" strokeWidth={2.5} />
@@ -340,20 +340,20 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
 
               {step === 1 && data.branche && (
                 <div className="space-y-4">
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Renseignez les caractéristiques pour votre assurance {data.branche.toLowerCase()} :
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     {CARACS_BY_BRANCH[data.branche].map((c) => (
                       <div key={c.id} className="flex flex-col gap-1.5">
-                        <label className="text-xs font-medium text-slate-600">
+                        <label className="text-xs font-medium text-slate-600 dark:text-slate-300">
                           {c.label} {c.required && <span className="text-rose-500">*</span>}
                         </label>
                         {c.type === 'select' ? (
                           <select
                             value={data.caracteristiques[c.id] || ''}
                             onChange={(e) => setCarac(c.id, e.target.value)}
-                            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                           >
                             <option value="">Sélectionner...</option>
                             {c.options?.map((o) => (
@@ -366,7 +366,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                             value={data.caracteristiques[c.id] || ''}
                             onChange={(e) => setCarac(c.id, e.target.value)}
                             placeholder="Saisir..."
-                            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                            className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                           />
                         )}
                       </div>
@@ -377,7 +377,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
 
               {step === 2 && data.branche && (
                 <div className="space-y-3">
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Sélectionnez les garanties souhaitées pour votre assurance {data.branche.toLowerCase()} :
                   </p>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -389,8 +389,8 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                           className={cn(
                             'flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all',
                             checked
-                              ? 'border-blue-300 bg-blue-50'
-                              : 'border-slate-200 bg-white hover:bg-slate-50',
+                              ? 'border-blue-300 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/40'
+                              : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800',
                             g.obligatoire && 'cursor-not-allowed opacity-90'
                           )}
                         >
@@ -402,12 +402,12 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                             className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                           />
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-slate-900">{g.label}</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{g.label}</p>
                             {g.obligatoire && (
-                              <p className="text-[11px] text-slate-400">Obligatoire · précochée</p>
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500">Obligatoire · précochée</p>
                             )}
                             {g.dependDe && (
-                              <p className="text-[11px] text-slate-400">
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500">
                                 Inclus &laquo; {GARANTIES_BY_BRANCH[data.branche].find((x) => x.id === g.dependDe)?.label} &raquo;
                               </p>
                             )}
@@ -421,7 +421,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
 
               {step === 3 && (
                 <div className="space-y-4">
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
                     Choisissez la durée et la date d&apos;effet de votre contrat :
                   </p>
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -432,8 +432,8 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                         className={cn(
                           'flex items-center gap-3 rounded-xl border p-4 text-left transition-all',
                           data.duree === d
-                            ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100'
-                            : 'border-slate-200 bg-white hover:bg-slate-50'
+                            ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100 dark:border-blue-700 dark:bg-blue-900/40 dark:ring-blue-900/40'
+                            : 'border-slate-200 bg-white hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800'
                         )}
                       >
                         <div className={cn(
@@ -445,11 +445,11 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                         <div>
                           <p className={cn(
                             'text-sm font-semibold',
-                            data.duree === d ? 'text-blue-700' : 'text-slate-900'
+                            data.duree === d ? 'text-blue-700 dark:text-blue-300' : 'text-slate-900 dark:text-slate-100'
                           )}>
                             {d}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             {d === '12 mois' && 'Tarif annuel · meilleur rapport'}
                             {d === '6 mois' && 'Souscription semestrielle'}
                             {d === '3 mois' && 'Idéal pour usage temporaire'}
@@ -458,14 +458,14 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                       </button>
                     ))}
                     <div className="sm:col-span-2">
-                      <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                      <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                         Date d&apos;effet du contrat <span className="text-rose-500">*</span>
                       </label>
                       <input
                         type="date"
                         value={data.dateDebut}
                         onChange={(e) => setData((s) => ({ ...s, dateDebut: e.target.value }))}
-                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 sm:max-w-xs"
+                        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40 sm:max-w-xs"
                       />
                     </div>
                   </div>
@@ -474,7 +474,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
+            <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4 dark:border-slate-800">
               <Button
                 variant="outline"
                 size="sm"

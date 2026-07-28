@@ -34,10 +34,10 @@ import { PageHeader } from '@/components/dashboard/page-header'
 import { ChartCard } from '@/components/dashboard/chart-card'
 
 const KPI_CARDS = [
-  { label: 'CA total (30j)', value: '142,5 M', unit: 'FCFA', icon: Wallet, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Devis émis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50' },
-  { label: 'Contrats souscrits', value: '856', icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: 'Sinistres traités', value: '184', icon: LifeBuoy, trend: '+22%', trendUp: true, color: 'text-amber-600', bg: 'bg-amber-50' },
+  { label: 'CA total (30j)', value: '142,5 M', unit: 'FCFA', icon: Wallet, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+  { label: 'Devis émis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+  { label: 'Contrats souscrits', value: '856', icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+  { label: 'Sinistres traités', value: '184', icon: LifeBuoy, trend: '+22%', trendUp: true, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
 ]
 
 const CA_DATA = [
@@ -83,7 +83,7 @@ export function AnalyticsPage() {
           return (
             <div
               key={s.label}
-              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50"
+              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500">{s.label}</span>
@@ -92,7 +92,7 @@ export function AnalyticsPage() {
                 </div>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-xl font-bold text-slate-900 sm:text-2xl">
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">
                   {s.value}
                   {s.unit && <span className="ml-1 text-xs text-slate-400">{s.unit}</span>}
                 </span>
@@ -131,6 +131,8 @@ export function AnalyticsPage() {
                   borderRadius: '12px',
                   border: '1px solid #E2E8F0',
                   fontSize: 12,
+                  background: 'var(--app-surface)',
+                  color: 'var(--app-text)',
                 }}
               />
               <Area
@@ -174,16 +176,16 @@ export function AnalyticsPage() {
               </PieChart>
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-lg font-extrabold text-slate-900">142M</span>
-              <span className="text-[10px] text-slate-400">FCFA</span>
+              <span className="text-lg font-extrabold text-slate-900 dark:text-slate-100">142M</span>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500">FCFA</span>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-1.5">
             {BRANCH_CA_DATA.map((d) => (
               <div key={d.name} className="flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full" style={{ backgroundColor: d.fill }} />
-                <span className="text-[11px] font-medium text-slate-600">{d.name}</span>
-                <span className="ml-auto text-[11px] font-semibold text-slate-900">{d.value}M</span>
+                <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400">{d.name}</span>
+                <span className="ml-auto text-[11px] font-semibold text-slate-900 dark:text-slate-100">{d.value}M</span>
               </div>
             ))}
           </div>
@@ -281,8 +283,8 @@ export function AnalyticsPage() {
             </RadialBarChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-extrabold text-slate-900">38h</span>
-            <span className="text-xs text-slate-500">/ 72h objectif</span>
+            <span className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">38h</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">/ 72h objectif</span>
             <span className="mt-1 flex items-center gap-1 text-xs font-semibold text-emerald-600">
               <Clock className="h-3 w-3" />
               Délai respecté
@@ -310,8 +312,8 @@ export function AnalyticsPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="truncate text-xs font-medium text-slate-700">{c.name}</span>
-                  <span className="text-xs font-semibold text-slate-500">{c.contracts}</span>
+                  <span className="truncate text-xs font-medium text-slate-700 dark:text-slate-300">{c.name}</span>
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">{c.contracts}</span>
                 </div>
                 <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100">
                   <div
@@ -343,8 +345,8 @@ export function AnalyticsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center justify-between">
-                    <span className="text-xs font-medium text-slate-700">{s.label}</span>
-                    <span className="text-xs font-semibold text-slate-900">{s.value}%</span>
+                    <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{s.label}</span>
+                    <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">{s.value}%</span>
                   </div>
                   <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
                     <div

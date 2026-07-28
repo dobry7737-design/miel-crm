@@ -44,8 +44,8 @@ export function BugsStatusChart() {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-extrabold text-slate-900">{total}</span>
-          <span className="text-[11px] font-medium text-slate-400">
+          <span className="text-2xl font-extrabold text-slate-900 dark:text-slate-100">{total}</span>
+          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
             Total sinistres
           </span>
         </div>
@@ -57,10 +57,10 @@ export function BugsStatusChart() {
               className="h-2.5 w-2.5 rounded-full"
               style={{ backgroundColor: d.color }}
             />
-            <span className="truncate text-xs font-medium text-slate-600">
+            <span className="truncate text-xs font-medium text-slate-600 dark:text-slate-400">
               {d.name}
             </span>
-            <span className="ml-auto text-xs font-semibold text-slate-900">
+            <span className="ml-auto text-xs font-semibold text-slate-900 dark:text-slate-100">
               {d.value}
             </span>
           </div>

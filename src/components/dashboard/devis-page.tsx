@@ -30,10 +30,10 @@ import { useNav } from '@/lib/nav'
 import { usePagination } from '@/lib/use-pagination'
 
 const STAT_CARDS = [
-  { label: 'Total devis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50' },
-  { label: 'Émis ce mois', value: '187', icon: TrendingUp, trend: '+8%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Transformés', value: '64', icon: CheckCircle2, trend: '+15%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: 'Taux conv. (30j)', value: '38 %', icon: TrendingDown, trend: '-2%', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50' },
+  { label: 'Total devis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+  { label: 'Émis ce mois', value: '187', icon: TrendingUp, trend: '+8%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+  { label: 'Transformés', value: '64', icon: CheckCircle2, trend: '+15%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+  { label: 'Taux conv. (30j)', value: '38 %', icon: TrendingDown, trend: '-2%', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
 ]
 
 export function DevisPage() {
@@ -92,7 +92,7 @@ export function DevisPage() {
           return (
             <div
               key={s.label}
-              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50"
+              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500">{s.label}</span>
@@ -101,7 +101,7 @@ export function DevisPage() {
                 </div>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-xl font-bold text-slate-900 sm:text-2xl">{s.value}</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
                 <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
                   {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {s.trend}
@@ -158,34 +158,34 @@ export function DevisPage() {
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500 text-[10px] font-semibold text-white">
                           {d.clientAvatar}
                         </span>
-                        <span className="text-slate-800">{d.client}</span>
+                        <span className="text-slate-800 dark:text-slate-200">{d.client}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3"><BranchBadge branch={d.branche} /></td>
-                    <td className="px-5 py-3 text-slate-600">{d.compagnie}</td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{d.compagnie}</td>
                     <td className="px-5 py-3">
                       <div className="flex flex-wrap gap-1">
                         {d.garanties.slice(0, 2).map((g) => (
-                          <span key={g} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600">
+                          <span key={g} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                             {g}
                           </span>
                         ))}
                         {d.garanties.length > 2 && (
-                          <span className="rounded-md bg-slate-50 px-1.5 py-0.5 text-[11px] text-slate-400">
+                          <span className="rounded-md bg-slate-50 px-1.5 py-0.5 text-[11px] text-slate-400 dark:bg-slate-800 dark:text-slate-500">
                             +{d.garanties.length - 2}
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-right font-semibold text-slate-800">
+                    <td className="px-5 py-3 text-right font-semibold text-slate-800 dark:text-slate-100">
                       {formatFCFA(d.prime)}
                     </td>
                     <td className="px-5 py-3"><StatutBadge statut={d.statut} /></td>
-                    <td className="px-5 py-3 text-xs text-slate-500">{d.dateCreation}</td>
+                    <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{d.dateCreation}</td>
                     <td className="px-5 py-3 text-right">
                       <button
                         onClick={() => setViewDevis(d)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-blue-600"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                         aria-label="Voir le devis"
                       >
                         <Eye className="h-4 w-4" strokeWidth={2} />
@@ -209,7 +209,7 @@ export function DevisPage() {
       <DevisWizardModal open={wizardOpen} onOpenChange={setWizardOpen} />
 
       <Dialog open={!!viewDevis} onOpenChange={(v) => !v && setViewDevis(null)}>
-        <DialogContent className="max-w-xl bg-white">
+        <DialogContent className="max-w-xl bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <FileText className="h-4 w-4 text-blue-600" />
@@ -223,27 +223,27 @@ export function DevisPage() {
           {viewDevis && (
             <div className="space-y-4">
               {/* Client info */}
-              <div className="rounded-xl bg-slate-50 p-4">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Client</p>
+              <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Client</p>
                 <div className="flex items-center gap-3">
                   <span className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500 text-sm font-semibold text-white">
                     {viewDevis.clientAvatar}
                   </span>
                   <div>
                     <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{viewDevis.client}</p>
-                    <p className="text-xs text-slate-500">{viewDevis.branche} · {viewDevis.compagnie}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{viewDevis.branche} · {viewDevis.compagnie}</p>
                   </div>
                 </div>
               </div>
 
               {/* Garanties */}
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                   Garanties incluses
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {viewDevis.garanties.map((g) => (
-                    <span key={g} className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    <span key={g} className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                       <CheckCircle2 className="h-3 w-3" />
                       {g}
                     </span>
@@ -252,18 +252,18 @@ export function DevisPage() {
               </div>
 
               {/* Prime */}
-              <div className="rounded-xl border border-slate-200 p-4">
+              <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-700">
                 <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-xs text-slate-500">Prime annuelle</p>
-                    <p className="text-2xl font-bold text-slate-900">{formatFCFA(viewDevis.prime)}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Prime annuelle</p>
+                    <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatFCFA(viewDevis.prime)}</p>
                   </div>
                   <StatutBadge statut={viewDevis.statut} />
                 </div>
               </div>
 
               {/* Footer actions */}
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <Button variant="outline" size="sm" onClick={() => setViewDevis(null)}>
                   Fermer
                 </Button>

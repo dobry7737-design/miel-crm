@@ -38,14 +38,14 @@ export function BugsPerDeveloper() {
           </div>
           <div className="flex-1">
             <div className="mb-1 flex items-center justify-between">
-              <span className="text-xs font-medium text-slate-700">
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 {agent.name}
               </span>
-              <span className="text-xs font-semibold text-slate-500">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 {agent.souscriptions}/{agent.total}
               </span>
             </div>
-            <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-violet-200"
                 style={{ width: `${(agent.total / agent.max) * 100}%` }}
@@ -58,14 +58,14 @@ export function BugsPerDeveloper() {
           </div>
         </div>
       ))}
-      <div className="mt-1 flex items-center gap-4 border-t border-slate-100 pt-3">
+      <div className="mt-1 flex items-center gap-4 border-t border-slate-100 pt-3 dark:border-slate-800">
         <div className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-          <span className="text-[11px] font-medium text-slate-500">Souscriptions</span>
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Souscriptions</span>
         </div>
         <div className="flex items-center gap-1.5">
           <span className="h-2.5 w-2.5 rounded-full bg-violet-200" />
-          <span className="text-[11px] font-medium text-slate-500">Devis</span>
+          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Devis</span>
         </div>
       </div>
     </ChartCard>

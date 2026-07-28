@@ -29,8 +29,8 @@ const data = [
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-      <p className="mb-2 text-xs font-semibold text-slate-900">{label} · 2026</p>
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+      <p className="mb-2 text-xs font-semibold text-slate-900 dark:text-slate-100">{label} · 2026</p>
       <div className="flex flex-col gap-1.5">
         {payload.map((entry: any) => (
           <div key={entry.name} className="flex items-center gap-2 text-xs">
@@ -38,8 +38,8 @@ function CustomTooltip({ active, payload, label }: any) {
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: entry.color }}
             />
-            <span className="capitalize text-slate-500">{entry.name}:</span>
-            <span className="font-semibold text-slate-900">{entry.value}</span>
+            <span className="capitalize text-slate-500 dark:text-slate-400">{entry.name}:</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">{entry.value}</span>
           </div>
         ))}
       </div>
@@ -86,7 +86,7 @@ export function BugTrendsChart() {
             iconType="circle"
             iconSize={8}
             wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-            formatter={(value) => <span className="text-slate-600">{value}</span>}
+            formatter={(value) => <span className="text-slate-600 dark:text-slate-400">{value}</span>}
           />
           <Line
             type="monotone"

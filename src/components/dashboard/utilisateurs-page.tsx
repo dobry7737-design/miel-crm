@@ -42,10 +42,10 @@ import { UTILISATEURS_DATA, type Utilisateur } from '@/lib/data'
 import { cn } from '@/lib/utils'
 
 const STAT_CARDS = [
-  { label: 'Total utilisateurs', value: '248', icon: Users, trend: '+12', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Actifs', value: '187', icon: CheckCircle2, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: 'Agents', value: '32', icon: Briefcase, trend: '+3', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50' },
-  { label: 'Suspendus', value: '4', icon: AlertCircle, trend: '-1', trendUp: false, color: 'text-rose-600', bg: 'bg-rose-50' },
+  { label: 'Total utilisateurs', value: '248', icon: Users, trend: '+12', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+  { label: 'Actifs', value: '187', icon: CheckCircle2, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+  { label: 'Agents', value: '32', icon: Briefcase, trend: '+3', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+  { label: 'Suspendus', value: '4', icon: AlertCircle, trend: '-1', trendUp: false, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/40' },
 ]
 
 const ROLE_ICONS: Record<Role, typeof ShieldCheck> = {
@@ -129,7 +129,7 @@ export function UtilisateursPage() {
           return (
             <div
               key={s.label}
-              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50"
+              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500">{s.label}</span>
@@ -138,7 +138,7 @@ export function UtilisateursPage() {
                 </div>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-xl font-bold text-slate-900 sm:text-2xl">{s.value}</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
                 <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
                   {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {s.trend}
@@ -208,26 +208,26 @@ export function UtilisateursPage() {
                             {u.avatar}
                           </span>
                           <div>
-                            <p className="text-sm font-medium text-slate-900">{u.nom}</p>
-                            <p className="text-xs text-slate-400">{u.compagnie && `${u.compagnie}`}</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.nom}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{u.compagnie && `${u.compagnie}`}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-slate-600">{u.email}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{u.email}</td>
                       <td className="px-5 py-3">
                         <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold', ROLE_BADGE_STYLES[u.role])}>
                           <Icon className="h-3 w-3" />
                           {ROLE_LABELS[u.role]}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-xs text-slate-500">{u.telephone}</td>
+                      <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{u.telephone}</td>
                       <td className="px-5 py-3"><StatutBadge statut={u.statut} /></td>
-                      <td className="px-5 py-3 text-xs text-slate-500">{u.derniereConnexion}</td>
+                      <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{u.derniereConnexion}</td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           <button
                             onClick={() => setView(u)}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-blue-600"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                             aria-label="Voir"
                           >
                             <Eye className="h-3.5 w-3.5" strokeWidth={2} />
@@ -237,7 +237,7 @@ export function UtilisateursPage() {
                               setEditing(u)
                               setEditOpen(true)
                             }}
-                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-emerald-600"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-emerald-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
                             aria-label="Modifier"
                           >
                             <Edit className="h-3.5 w-3.5" strokeWidth={2} />
@@ -262,7 +262,7 @@ export function UtilisateursPage() {
 
       {/* View Modal */}
       <Dialog open={!!view} onOpenChange={(v) => !v && setView(null)}>
-        <DialogContent className="max-w-md bg-white">
+        <DialogContent className="max-w-md bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
           <DialogHeader>
             <DialogTitle className="text-base">Profil de {view?.nom}</DialogTitle>
             <DialogDescription className="text-xs">
@@ -271,13 +271,13 @@ export function UtilisateursPage() {
           </DialogHeader>
           {view && (
             <div className="space-y-4">
-              <div className="flex flex-col items-center gap-3 rounded-xl bg-slate-50 p-5 text-center">
+              <div className="flex flex-col items-center gap-3 rounded-xl bg-slate-50 p-5 text-center dark:bg-slate-800">
                 <span className={`flex h-16 w-16 items-center justify-center rounded-full text-lg font-semibold ${view.avatarColor}`}>
                   {view.avatar}
                 </span>
                 <div>
-                  <p className="text-base font-semibold text-slate-900">{view.nom}</p>
-                  <p className="text-xs text-slate-500">{view.email}</p>
+                  <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{view.nom}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{view.email}</p>
                 </div>
                 <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold', ROLE_BADGE_STYLES[view.role])}>
                   {ROLE_LABELS[view.role]}
@@ -290,7 +290,7 @@ export function UtilisateursPage() {
                 <InfoField label="Dernière connexion" value={view.derniereConnexion} />
                 {view.compagnie && <InfoField label="Compagnie" value={view.compagnie} />}
               </div>
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <Button variant="outline" size="sm" onClick={() => setView(null)}>Fermer</Button>
                 <Button
                   size="sm"
@@ -336,8 +336,8 @@ function FilterPill({
       className={cn(
         'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition',
         active
-          ? 'border-blue-300 bg-blue-50 text-blue-700'
-          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+          ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
       )}
     >
       {icon}
@@ -349,8 +349,8 @@ function FilterPill({
 function InfoField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="text-sm font-medium text-slate-800">{value}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500">{label}</p>
+      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{value}</p>
     </div>
   )
 }
@@ -406,7 +406,7 @@ function UtilisateurEditModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg bg-white">
+      <DialogContent className="max-w-lg bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
         <DialogHeader>
           <DialogTitle className="text-base">
             {completed ? 'Utilisateur enregistré' : editing ? `Modifier ${editing.nom}` : 'Inviter un utilisateur'}
@@ -423,10 +423,10 @@ function UtilisateurEditModal({
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
               <PartyPopper className="h-7 w-7 text-emerald-600" strokeWidth={2} />
             </div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
               {editing ? 'Modifications enregistrées !' : 'Invitation envoyée !'}
             </h3>
-            <p className="max-w-sm text-sm text-slate-500">
+            <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
               {editing
                 ? `Les informations de ${form.nom} ont été mises à jour.`
                 : `Un email a été envoyé à ${form.email} avec un lien d'activation du compte.`}
@@ -438,7 +438,7 @@ function UtilisateurEditModal({
         ) : (
           <div className="space-y-4">
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-600">
+              <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                 Nom complet <span className="text-rose-500">*</span>
               </label>
               <input
@@ -446,13 +446,13 @@ function UtilisateurEditModal({
                 value={form.nom}
                 onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
                 placeholder="ex: Aïssata Diallo"
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                   Email <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -460,23 +460,23 @@ function UtilisateurEditModal({
                   value={form.email}
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   placeholder="email@exemple.ml"
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600">Téléphone</label>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Téléphone</label>
                 <input
                   type="text"
                   value={form.telephone}
                   onChange={(e) => setForm((f) => ({ ...f, telephone: e.target.value }))}
                   placeholder="+223 ..."
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-xs font-medium text-slate-600">
+              <label className="mb-2 block text-xs font-medium text-slate-600 dark:text-slate-300">
                 Profil RBAC <span className="text-rose-500">*</span>
               </label>
               <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
@@ -491,8 +491,8 @@ function UtilisateurEditModal({
                       className={cn(
                         'flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition',
                         isActive
-                          ? 'border-blue-300 bg-blue-50 text-blue-700'
-                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                          ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
                       )}
                     >
                       <Icon className="h-3.5 w-3.5" />
@@ -505,13 +505,13 @@ function UtilisateurEditModal({
 
             {form.role === 'correspondant' && (
               <div>
-                <label className="mb-1.5 block text-xs font-medium text-slate-600">
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
                   Compagnie partenaire <span className="text-rose-500">*</span>
                 </label>
                 <select
                   value={form.compagnie}
                   onChange={(e) => setForm((f) => ({ ...f, compagnie: e.target.value }))}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 >
                   <option value="">Sélectionner...</option>
                   <option>NSIA Assurances</option>
@@ -524,11 +524,11 @@ function UtilisateurEditModal({
             )}
 
             <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-600">Statut</label>
+              <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Statut</label>
               <select
                 value={form.statut}
                 onChange={(e) => setForm((f) => ({ ...f, statut: e.target.value as typeof form.statut }))}
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
               >
                 <option value="Invité">Invité (en attente activation)</option>
                 <option value="Actif">Actif</option>
@@ -536,7 +536,7 @@ function UtilisateurEditModal({
               </select>
             </div>
 
-            <DialogFooter className="border-t border-slate-100 pt-4">
+            <DialogFooter className="border-t border-slate-100 pt-4 dark:border-slate-800">
               <Button variant="outline" size="sm" onClick={() => handleClose(false)}>Annuler</Button>
               <Button
                 size="sm"

@@ -27,10 +27,10 @@ import { CONTRATS_DATA, formatFCFA, type Contrat } from '@/lib/data'
 import { usePagination } from '@/lib/use-pagination'
 
 const STAT_CARDS = [
-  { label: 'Contrats actifs', value: '856', icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: "Souscrits ce mois", value: '127', icon: TrendingUp, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'En attente', value: '23', icon: AlertCircle, trend: '-3%', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50' },
-  { label: 'Renouvellements (30j)', value: '48', icon: CalendarClock, trend: '+5%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50' },
+  { label: 'Contrats actifs', value: '856', icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+  { label: "Souscrits ce mois", value: '127', icon: TrendingUp, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+  { label: 'En attente', value: '23', icon: AlertCircle, trend: '-3%', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+  { label: 'Renouvellements (30j)', value: '48', icon: CalendarClock, trend: '+5%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
 ]
 
 export function ContratsPage() {
@@ -70,7 +70,7 @@ export function ContratsPage() {
           return (
             <div
               key={s.label}
-              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50"
+              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-500">{s.label}</span>
@@ -79,7 +79,7 @@ export function ContratsPage() {
                 </div>
               </div>
               <div className="flex items-end justify-between">
-                <span className="text-xl font-bold text-slate-900 sm:text-2xl">{s.value}</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
                 <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
                   {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {s.trend}
@@ -129,19 +129,19 @@ export function ContratsPage() {
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-semibold text-white">
                           {c.clientAvatar}
                         </span>
-                        <span className="text-slate-800">{c.client}</span>
+                        <span className="text-slate-800 dark:text-slate-200">{c.client}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3"><BranchBadge branch={c.branche} /></td>
-                    <td className="px-5 py-3 text-slate-600">{c.compagnie}</td>
-                    <td className="px-5 py-3 text-slate-600">{c.produit}</td>
-                    <td className="px-5 py-3 text-right font-semibold text-slate-800">{formatFCFA(c.prime)}</td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{c.compagnie}</td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{c.produit}</td>
+                    <td className="px-5 py-3 text-right font-semibold text-slate-800 dark:text-slate-100">{formatFCFA(c.prime)}</td>
                     <td className="px-5 py-3"><StatutBadge statut={c.statut} /></td>
-                    <td className="px-5 py-3 text-xs text-slate-500">{c.prochainRenouvellement}</td>
+                    <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{c.prochainRenouvellement}</td>
                     <td className="px-5 py-3 text-right">
                       <button
                         onClick={() => setViewContrat(c)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-blue-600"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition hover:bg-slate-50 hover:text-blue-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-blue-400"
                         aria-label="Voir le contrat"
                       >
                         <Eye className="h-4 w-4" strokeWidth={2} />
@@ -163,7 +163,7 @@ export function ContratsPage() {
       </div>
 
       <Dialog open={!!viewContrat} onOpenChange={(v) => !v && setViewContrat(null)}>
-        <DialogContent className="max-w-xl bg-white">
+        <DialogContent className="max-w-xl bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
@@ -188,10 +188,10 @@ export function ContratsPage() {
               </div>
 
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Garanties incluses</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Garanties incluses</p>
                 <div className="flex flex-wrap gap-2">
                   {viewContrat.garanties.map((g) => (
-                    <span key={g} className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                    <span key={g} className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                       <CheckCircle2 className="h-3 w-3" />
                       {g}
                     </span>
@@ -199,15 +199,15 @@ export function ContratsPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center justify-between rounded-xl border border-slate-200 p-4 dark:border-slate-700">
                 <div>
-                  <p className="text-xs text-slate-500">Prime annuelle</p>
-                  <p className="text-2xl font-bold text-slate-900">{formatFCFA(viewContrat.prime)}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Prime annuelle</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{formatFCFA(viewContrat.prime)}</p>
                 </div>
                 <StatutBadge statut={viewContrat.statut} />
               </div>
 
-              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <Button variant="outline" size="sm">
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   Attestation PDF
@@ -225,8 +225,8 @@ export function ContratsPage() {
 function InfoField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-slate-400">{label}</p>
-      <p className="text-sm font-medium text-slate-800">{value}</p>
+      <p className="text-xs text-slate-400 dark:text-slate-500">{label}</p>
+      <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{value}</p>
     </div>
   )
 }
