@@ -10,28 +10,27 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts'
-import { ChartCard, DropdownPill } from './chart-card'
+import { ChartCard } from './chart-card'
 
 const data = [
-  { date: 'Mar 1', created: 22, open: 35, closed: 28 },
-  { date: 'Mar 2', created: 30, open: 40, closed: 33 },
-  { date: 'Mar 3', created: 25, open: 38, closed: 30 },
-  { date: 'Mar 4', created: 18, open: 47, closed: 61 },
-  { date: 'Mar 5', created: 28, open: 44, closed: 38 },
-  { date: 'Mar 6', created: 35, open: 42, closed: 45 },
-  { date: 'Mar 7', created: 24, open: 39, closed: 32 },
-  { date: 'Mar 8', created: 32, open: 46, closed: 40 },
-  { date: 'Mar 9', created: 28, open: 41, closed: 36 },
-  { date: 'Mar 10', created: 38, open: 49, closed: 52 },
+  { date: 'Sem 1', devis: 28, souscriptions: 18, contrats: 14 },
+  { date: 'Sem 2', devis: 35, souscriptions: 22, contrats: 19 },
+  { date: 'Sem 3', devis: 42, souscriptions: 28, contrats: 24 },
+  { date: 'Sem 4', devis: 38, souscriptions: 25, contrats: 22 },
+  { date: 'Sem 5', devis: 52, souscriptions: 35, contrats: 28 },
+  { date: 'Sem 6', devis: 48, souscriptions: 32, contrats: 26 },
+  { date: 'Sem 7', devis: 62, souscriptions: 42, contrats: 36 },
+  { date: 'Sem 8', devis: 58, souscriptions: 38, contrats: 33 },
+  { date: 'Sem 9', devis: 72, souscriptions: 48, contrats: 42 },
+  { date: 'Sem 10', devis: 85, souscriptions: 58, contrats: 51 },
+  { date: 'Sem 11', devis: 78, souscriptions: 52, contrats: 47 },
 ]
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-      <p className="mb-2 text-xs font-semibold text-slate-900">
-        March {label?.split(' ')[1]}, 2026
-      </p>
+      <p className="mb-2 text-xs font-semibold text-slate-900">{label} · 2026</p>
       <div className="flex flex-col gap-1.5">
         {payload.map((entry: any) => (
           <div key={entry.name} className="flex items-center gap-2 text-xs">
@@ -51,32 +50,15 @@ function CustomTooltip({ active, payload, label }: any) {
 export function BugTrendsChart() {
   return (
     <ChartCard
-      title="Bug Trends"
-      subtitle="Daily bug creation and resolution over the last 11 days"
-      dropdownLabel="All Bugs"
-      dropdownItems={['All Bugs', 'Open', 'Closed']}
+      title="Évolution des Devis"
+      subtitle="Devis, souscriptions et contrats sur les 11 dernières semaines"
+      dropdownLabel="Toutes branches"
+      dropdownItems={['Toutes branches', 'Auto', 'Santé', 'Habitation', 'Voyage', 'Vie']}
       className="xl:flex-[1.4]"
       bodyClassName="h-[260px]"
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={data}
-          margin={{ top: 5, right: 10, left: -20, bottom: 0 }}
-        >
-          <defs>
-            <linearGradient id="createdStroke" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#F59E0B" stopOpacity={1} />
-              <stop offset="100%" stopColor="#F59E0B" stopOpacity={1} />
-            </linearGradient>
-            <linearGradient id="openStroke" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#EC4899" stopOpacity={1} />
-              <stop offset="100%" stopColor="#EC4899" stopOpacity={1} />
-            </linearGradient>
-            <linearGradient id="closedStroke" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#14B8A6" stopOpacity={1} />
-              <stop offset="100%" stopColor="#14B8A6" stopOpacity={1} />
-            </linearGradient>
-          </defs>
+        <LineChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
@@ -90,8 +72,8 @@ export function BugTrendsChart() {
             axisLine={false}
           />
           <YAxis
-            domain={[0, 60]}
-            ticks={[0, 15, 30, 45, 60]}
+            domain={[0, 90]}
+            ticks={[0, 15, 30, 45, 60, 75, 90]}
             tick={{ fontSize: 11, fill: '#94A3B8' }}
             tickLine={false}
             axisLine={false}
@@ -104,14 +86,12 @@ export function BugTrendsChart() {
             iconType="circle"
             iconSize={8}
             wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
-            formatter={(value) => (
-              <span className="text-slate-600">{value}</span>
-            )}
+            formatter={(value) => <span className="text-slate-600">{value}</span>}
           />
           <Line
             type="monotone"
-            dataKey="created"
-            name="Created"
+            dataKey="devis"
+            name="Devis"
             stroke="#F59E0B"
             strokeWidth={2.5}
             dot={{ r: 3, fill: '#F59E0B', strokeWidth: 0 }}
@@ -120,22 +100,22 @@ export function BugTrendsChart() {
           />
           <Line
             type="monotone"
-            dataKey="open"
-            name="Open"
-            stroke="#EC4899"
+            dataKey="souscriptions"
+            name="Souscriptions"
+            stroke="#3B82F6"
             strokeWidth={2.5}
-            dot={{ r: 3, fill: '#EC4899', strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: '#EC4899', stroke: '#fff', strokeWidth: 2 }}
+            dot={{ r: 3, fill: '#3B82F6', strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: '#3B82F6', stroke: '#fff', strokeWidth: 2 }}
             isAnimationActive={false}
           />
           <Line
             type="monotone"
-            dataKey="closed"
-            name="Closed"
-            stroke="#14B8A6"
+            dataKey="contrats"
+            name="Contrats Actifs"
+            stroke="#10B981"
             strokeWidth={2.5}
-            dot={{ r: 3, fill: '#14B8A6', strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: '#14B8A6', stroke: '#fff', strokeWidth: 2 }}
+            dot={{ r: 3, fill: '#10B981', strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: '#10B981', stroke: '#fff', strokeWidth: 2 }}
             isAnimationActive={false}
           />
         </LineChart>

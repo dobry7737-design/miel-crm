@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { ChartCard } from './chart-card'
 
 interface Activity {
@@ -17,66 +17,72 @@ interface Activity {
 const activities: Activity[] = [
   {
     id: '1',
-    avatar: 'LA',
+    avatar: 'IC',
     avatarColor: 'bg-violet-500',
-    name: 'Lisa Anderson',
-    action: 'Created bug',
-    target: 'BUG-1238',
-    time: '3/7/2025, 10:03:09 PM',
-    tag: 'BUG-1238',
+    name: 'Ibrahim Coulibaly',
+    action: 'a souscrit un contrat',
+    target: 'Auto - NSIA',
+    time: 'il y a 3 min',
+    tag: 'CTR-2026-0142',
   },
   {
     id: '2',
-    avatar: 'MB',
+    avatar: 'AD',
     avatarColor: 'bg-emerald-500',
-    name: 'Michael Booth',
-    action: 'Resolved bug',
-    target: 'BUG-1234',
-    time: '3/7/2025, 9:45:21 PM',
-    tag: 'BUG-1234',
+    name: 'Aïssata Diallo',
+    action: 'a généré un devis',
+    target: 'Habitation - SUNU',
+    time: 'il y a 12 min',
+    tag: 'DEV-2026-0487',
   },
   {
     id: '3',
-    avatar: 'AC',
+    avatar: 'FK',
     avatarColor: 'bg-amber-500',
-    name: 'Andie Corbin',
-    action: 'Updated bug',
-    target: 'BUG-1230',
-    time: '3/7/2025, 8:30:11 PM',
-    tag: 'BUG-1230',
+    name: 'Fatoumata Koné',
+    action: 'a traité un sinistre',
+    target: 'Santé - AFG',
+    time: 'il y a 25 min',
+    tag: 'SIN-2026-0098',
   },
   {
     id: '4',
-    avatar: 'DB',
+    avatar: 'MT',
     avatarColor: 'bg-rose-500',
-    name: 'Drake Blanset',
-    action: 'Commented on',
-    target: 'BUG-1228',
-    time: '3/7/2025, 7:15:43 PM',
-    tag: 'BUG-1228',
+    name: 'Mohamed Traoré',
+    action: 'a ajouté une grille tarifaire',
+    target: 'CNAR · Auto',
+    time: 'il y a 1 h',
+    tag: 'TARIF-AUTO',
   },
   {
     id: '5',
-    avatar: 'MF',
+    avatar: 'SB',
     avatarColor: 'bg-blue-500',
-    name: 'Mick Folly',
-    action: 'Closed bug',
-    target: 'BUG-1225',
-    time: '3/7/2025, 5:50:18 PM',
-    tag: 'BUG-1225',
+    name: 'Seydou Ba (NSIA)',
+    action: 'a mis à jour les produits',
+    target: 'Voyage',
+    time: 'il y a 2 h',
+    tag: 'MAJ-PRODUIT',
   },
 ]
 
 export function RecentActivity() {
   return (
     <ChartCard
-      title="Recent Activity"
-      subtitle="Latest updates across all projects"
+      title="Activité Récente"
+      subtitle="Dernières actions sur la plateforme"
       className="lg:col-span-2"
       bodyClassName="flex flex-col gap-1 -mx-1"
+      action={
+        <button className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-blue-600 transition hover:text-blue-700">
+          Tout voir
+          <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+        </button>
+      }
     >
       <div className="flex flex-col">
-        {activities.map((a, idx) => (
+        {activities.map((a) => (
           <div
             key={a.id}
             className="flex items-center gap-3 border-b border-slate-100 px-1 py-2.5 last:border-0"
