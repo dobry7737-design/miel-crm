@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Eye,
   ShieldCheck,
@@ -23,7 +23,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { CONTRATS_DATA, formatFCFA, type Contrat } from '@/lib/data'
+import { api, formatFCFA, type ContratDTO } from '@/lib/api'
 import { usePagination } from '@/lib/use-pagination'
 import { toast } from 'sonner'
 
@@ -38,28 +38,13 @@ export function ContratsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [brancheFilter, setBrancheFilter] = useState('')
-  const [viewContrat, setViewContrat] = useState<Contrat | null>(null)
+  const [viewContrat, setViewContrat] = useState<ContratDTO | null>(null)
 
-  const filtered = useMemo(() => {
-    let result = CONTRATS_DATA
-    if (search) {
-      const q = search.toLowerCase()
-      result = result.filter(
-        (c) =>
-          c.reference.toLowerCase().includes(q) ||
-          c.client.toLowerCase().includes(q) ||
-          c.compagnie.toLowerCase().includes(q) ||
-          c.branche.toLowerCase().includes(q)
-      )
-    }
-    if (statusFilter) {
-      result = result.filter((c) => c.statut === statusFilter)
-    }
-    if (brancheFilter) {
-      result = result.filter((c) => c.branche === brancheFilter)
-    }
-    return result
-  }, [search, statusFilter, brancheFilter])
+  const { data: resp, isLoading } = useQuery({
+    queryKey: ['contrats', { statut: statusFilter, branche: brancheFilter, search }],
+    queryFn: () => api.getContrats({ statut: statusFilter || undefined, branche: brancheFilter || undefined, search: search || undefined }),
+  })
+  const filtered = resp?.data || []
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, statusFilter, brancheFilter])
@@ -168,13 +153,13 @@ export function ContratsPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-semibold text-white">
-                          {c.clientAvatar}
+                          {c.clientNameAvatar}
                         </span>
-                        <span className="text-slate-800 dark:text-slate-200">{c.client}</span>
+                        <span className="text-slate-800 dark:text-slate-200">{c.clientNameName}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3"><BranchBadge branch={c.branche} /></td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{c.compagnie}</td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{c.companyName}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{c.produit}</td>
                     <td className="px-5 py-3 text-right font-semibold text-slate-800 dark:text-slate-100">{formatFCFA(c.prime)}</td>
                     <td className="px-5 py-3"><StatutBadge statut={c.statut} /></td>

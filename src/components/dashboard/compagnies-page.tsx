@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Eye,
   Edit,
@@ -30,7 +30,7 @@ import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
 import { Pagination } from '@/components/dashboard/pagination'
 import { usePagination } from '@/lib/use-pagination'
-import { COMPAGNIES_DATA, type Compagnie } from '@/lib/data'
+import { api, type CompagnieDTO } from '@/lib/api'
 
 const STAT_CARDS = [
   { label: 'Total compagnies', value: '11', icon: Building2, trend: '+1', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
@@ -43,9 +43,9 @@ export function CompagniesPage() {
   const { setPrimaryAction, openPrimaryAction } = useUI()
   const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
-  const [view, setView] = useState<Compagnie | null>(null)
+  const [view, setView] = useState<CompagnieDTO | null>(null)
   const [editOpen, setEditOpen] = useState(false)
-  const [editing, setEditing] = useState<Compagnie | null>(null)
+  const [editing, setEditing] = useState<CompagnieDTO | null>(null)
 
   useEffect(() => {
     setPrimaryAction(() => {
@@ -62,13 +62,11 @@ export function CompagniesPage() {
     }
   }, [pendingAction, clearPendingAction, openPrimaryAction])
 
-  const filtered = useMemo(() => {
-    if (!search) return COMPAGNIES_DATA
-    const q = search.toLowerCase()
-    return COMPAGNIES_DATA.filter(
-      (c) => c.nom.toLowerCase().includes(q) || c.agrement.toLowerCase().includes(q)
-    )
-  }, [search])
+  const { data: resp, isLoading } = useQuery({
+    queryKey: ['compagnies', { search }],
+    queryFn: () => api.getCompagnies({ search: search || undefined }),
+  })
+  const filtered = resp?.data || []
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 8, [search])
@@ -146,11 +144,11 @@ export function CompagniesPage() {
               </div>
               <div className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
                 <p className="text-slate-400 dark:text-slate-500">Produits</p>
-                <p className="font-semibold text-slate-800 dark:text-slate-200">{c.produits}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">{c._count?.devis || 0}</p>
               </div>
               <div className="rounded-lg bg-slate-50 px-2.5 py-1.5 dark:bg-slate-800/60">
                 <p className="text-slate-400 dark:text-slate-500">Sinistres actifs</p>
-                <p className="font-semibold text-slate-800 dark:text-slate-200">{c.sinistresActifs}</p>
+                <p className="font-semibold text-slate-800 dark:text-slate-200">{c._count?.sinistres || 0}</p>
               </div>
             </div>
 
@@ -237,11 +235,11 @@ export function CompagniesPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Produits actifs</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{view.produits}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{view._count?.devis || 0}</p>
                 </div>
                 <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
                   <p className="text-xs text-slate-500 dark:text-slate-400">Sinistres en cours</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{view.sinistresActifs}</p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{view._count?.sinistres || 0}</p>
                 </div>
               </div>
 
@@ -309,7 +307,7 @@ function CompagnieEditModal({
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  editing: Compagnie | null
+  editing: CompagnieDTO | null
 }) {
   const [form, setForm] = useState(() => ({
     nom: editing?.nom ?? '',

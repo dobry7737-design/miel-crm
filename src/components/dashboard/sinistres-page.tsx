@@ -32,7 +32,7 @@ import { useNav } from '@/lib/nav'
 import { toast } from 'sonner'
 import { Pagination } from '@/components/dashboard/pagination'
 import { usePagination } from '@/lib/use-pagination'
-import { SINISTRES_DATA, formatFCFA, type Sinistre, type Branch } from '@/lib/data'
+import { api, formatFCFA, type SinistreDTO } from '@/lib/api'
 
 const STAT_CARDS = [
   { label: 'Sinistres en cours', value: '47', icon: LifeBuoy, trend: '+5', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
@@ -49,7 +49,7 @@ export function SinistresPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [brancheFilter, setBrancheFilter] = useState('')
-  const [viewSinistre, setViewSinistre] = useState<Sinistre | null>(null)
+  const [viewSinistre, setViewSinistre] = useState<SinistreDTO | null>(null)
   const [declareOpen, setDeclareOpen] = useState(false)
 
   useEffect(() => {
@@ -64,26 +64,11 @@ export function SinistresPage() {
     }
   }, [pendingAction, clearPendingAction, openPrimaryAction])
 
-  const filtered = useMemo(() => {
-    let result = SINISTRES_DATA
-    if (search) {
-      const q = search.toLowerCase()
-      result = result.filter(
-        (s) =>
-          s.reference.toLowerCase().includes(q) ||
-          s.client.toLowerCase().includes(q) ||
-          s.compagnie.toLowerCase().includes(q) ||
-          s.branche.toLowerCase().includes(q)
-      )
-    }
-    if (statusFilter) {
-      result = result.filter((s) => s.statut === statusFilter)
-    }
-    if (brancheFilter) {
-      result = result.filter((s) => s.branche === brancheFilter)
-    }
-    return result
-  }, [search, statusFilter, brancheFilter])
+  const { data: resp, isLoading } = useQuery({
+    queryKey: ['sinistres', { statut: statusFilter, branche: brancheFilter, search }],
+    queryFn: () => api.getSinistres({ statut: statusFilter || undefined, branche: brancheFilter || undefined, search: search || undefined }),
+  })
+  const filtered = resp?.data || []
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, statusFilter, brancheFilter])
@@ -194,13 +179,13 @@ export function SinistresPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
-                          {s.clientAvatar}
+                          {s.clientNameAvatar}
                         </span>
-                        <span className="text-slate-800 dark:text-slate-200">{s.client}</span>
+                        <span className="text-slate-800 dark:text-slate-200">{s.clientNameName}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3"><BranchBadge branch={s.branche} /></td>
-                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{s.compagnie}</td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{s.companyName}</td>
                     <td className="px-5 py-3">
                       <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{s.contratRef}</span>
                     </td>
@@ -254,9 +239,9 @@ export function SinistresPage() {
           {viewSinistre && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <InfoField label="Client" value={viewSinistre.client} />
+                <InfoField label="Client" value={viewSinistre.clientName} />
                 <InfoField label="Branche" value={viewSinistre.branche} />
-                <InfoField label="Compagnie" value={viewSinistre.compagnie} />
+                <InfoField label="Compagnie" value={viewSinistre.companyName} />
                 <InfoField label="Contrat" value={viewSinistre.contratRef} />
                 <InfoField label="Date déclaration" value={viewSinistre.dateDeclaration} />
                 <InfoField

@@ -1,5 +1,6 @@
 'use client'
 
+import { useQuery } from '@tanstack/react-query'
 import {
   ArrowUpRight,
   ArrowDownRight,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth, type Role } from '@/lib/auth'
+import { api, formatFCFA } from '@/lib/api'
 import type { LucideIcon } from 'lucide-react'
 
 interface StatCardProps {
@@ -27,233 +29,56 @@ interface StatCardProps {
   iconBg: string
 }
 
-// RBAC: stats vary by role
-const STATS_BY_ROLE: Record<Role, StatCardProps[]> = {
-  admin: [
-    {
-      label: 'Total Devis',
-      value: 1248,
-      icon: FileText,
-      trend: 12,
-      trendUp: true,
-      trendLabel: 'vs mois dernier',
-      iconColor: 'text-violet-600',
-      iconBg: 'bg-violet-50 dark:bg-violet-900/40',
-    },
-    {
-      label: 'Contrats Actifs',
-      value: 856,
-      icon: ShieldCheck,
-      trend: 8,
-      trendUp: true,
-      trendLabel: 'ce mois',
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50 dark:bg-emerald-900/40',
-    },
-    {
-      label: 'Sinistres en cours',
-      value: 47,
-      icon: LifeBuoy,
-      trend: 5,
-      trendUp: false,
-      trendLabel: 'engagement 72h',
-      iconColor: 'text-amber-600',
-      iconBg: 'bg-amber-50 dark:bg-amber-900/40',
-    },
-    {
-      label: "Chiffre d'affaires",
-      value: '142,5',
-      unit: 'M FCFA',
-      icon: Wallet,
-      trend: 18,
-      trendUp: true,
-      trendLabel: 'vs N-1',
-      iconColor: 'text-blue-600',
-      iconBg: 'bg-blue-50 dark:bg-blue-900/40',
-    },
-  ],
-  agent: [
-    {
-      label: 'Devis ce mois',
-      value: 84,
-      icon: FileText,
-      trend: 23,
-      trendUp: true,
-      trendLabel: 'vs mois dernier',
-      iconColor: 'text-violet-600',
-      iconBg: 'bg-violet-50 dark:bg-violet-900/40',
-    },
-    {
-      label: 'Contrats actifs',
-      value: 127,
-      icon: ShieldCheck,
-      trend: 6,
-      trendUp: true,
-      trendLabel: 'portefeuille',
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50 dark:bg-emerald-900/40',
-    },
-    {
-      label: 'Commissions',
-      value: '3,8',
-      unit: 'M FCFA',
-      icon: Wallet,
-      trend: 14,
-      trendUp: true,
-      trendLabel: 'vs mois dernier',
-      iconColor: 'text-blue-600',
-      iconBg: 'bg-blue-50 dark:bg-blue-900/40',
-    },
-    {
-      label: 'Taux transformation',
-      value: 38,
-      unit: '%',
-      icon: ArrowUpRight,
-      trend: 4,
-      trendUp: true,
-      trendLabel: 'devis → contrats',
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50 dark:bg-emerald-900/40',
-    },
-  ],
-  client: [
-    {
-      label: 'Mes contrats actifs',
-      value: 3,
-      icon: ShieldCheck,
-      trend: 0,
-      trendUp: true,
-      trendLabel: 'Auto · Santé · Habitation',
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50 dark:bg-emerald-900/40',
-    },
-    {
-      label: 'Échéance proche',
-      value: 1,
-      icon: AlertTriangle,
-      trend: 12,
-      trendUp: false,
-      trendLabel: 'dans 12 jours',
-      iconColor: 'text-amber-600',
-      iconBg: 'bg-amber-50 dark:bg-amber-900/40',
-    },
-    {
-      label: 'Sinistres en cours',
-      value: 0,
-      icon: LifeBuoy,
-      trend: 0,
-      trendUp: true,
-      trendLabel: 'aucun sinistre actif',
-      iconColor: 'text-slate-600 dark:text-slate-300',
-      iconBg: 'bg-slate-100 dark:bg-slate-800',
-    },
-    {
-      label: 'Mes devis récents',
-      value: 5,
-      icon: FileText,
-      trend: 0,
-      trendUp: true,
-      trendLabel: 'comparaisons effectuées',
-      iconColor: 'text-violet-600',
-      iconBg: 'bg-violet-50 dark:bg-violet-900/40',
-    },
-  ],
-  gestionnaire: [
-    {
-      label: 'Sinistres en cours',
-      value: 47,
-      icon: LifeBuoy,
-      trend: 5,
-      trendUp: false,
-      trendLabel: 'engagement 72h',
-      iconColor: 'text-amber-600',
-      iconBg: 'bg-amber-50 dark:bg-amber-900/40',
-    },
-    {
-      label: 'Traités cette semaine',
-      value: 18,
-      icon: ShieldCheck,
-      trend: 12,
-      trendUp: true,
-      trendLabel: 'dans les délais',
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50 dark:bg-emerald-900/40',
-    },
-    {
-      label: 'En alerte (>72h)',
-      value: 3,
-      icon: AlertTriangle,
-      trend: 0,
-      trendUp: false,
-      trendLabel: 'à traiter en urgence',
-      iconColor: 'text-rose-600',
-      iconBg: 'bg-rose-50 dark:bg-rose-900/40',
-    },
-    {
-      label: 'Délai moyen',
-      value: 38,
-      unit: 'h',
-      icon: ArrowUpRight,
-      trend: 22,
-      trendUp: true,
-      trendLabel: 'amélioration délai',
-      iconColor: 'text-blue-600',
-      iconBg: 'bg-blue-50 dark:bg-blue-900/40',
-    },
-  ],
-  correspondant: [
-    {
-      label: 'Mes produits',
-      value: 12,
-      icon: FileText,
-      trend: 0,
-      trendUp: true,
-      trendLabel: 'grilles tarifaires actives',
-      iconColor: 'text-violet-600',
-      iconBg: 'bg-violet-50 dark:bg-violet-900/40',
-    },
-    {
-      label: 'Devis générés',
-      value: 234,
-      icon: ArrowUpRight,
-      trend: 28,
-      trendUp: true,
-      trendLabel: 'via comparateur',
-      iconColor: 'text-emerald-600',
-      iconBg: 'bg-emerald-50 dark:bg-emerald-900/40',
-    },
-    {
-      label: 'Contrats souscrits',
-      value: 87,
-      icon: ShieldCheck,
-      trend: 15,
-      trendUp: true,
-      trendLabel: 'cette année',
-      iconColor: 'text-blue-600',
-      iconBg: 'bg-blue-50 dark:bg-blue-900/40',
-    },
-    {
-      label: 'Note moyenne',
-      value: 4.7,
-      unit: '/5',
-      icon: Users,
-      trend: 0.2,
-      trendUp: true,
-      trendLabel: 'satisfaction clients',
-      iconColor: 'text-amber-600',
-      iconBg: 'bg-amber-50 dark:bg-amber-900/40',
-    },
-  ],
-}
-
 export function StatCards() {
   const { user } = useAuth()
+  const { data: stats } = useQuery({
+    queryKey: ['stats'],
+    queryFn: () => api.getStats(),
+  })
+
   if (!user) return null
-  const stats = STATS_BY_ROLE[user.role] || STATS_BY_ROLE.admin
+
+  const t = stats?.totals
+  const f = stats?.financials
+
+  const statsByRole: Record<Role, StatCardProps[]> = {
+    admin: [
+      { label: 'Total Devis', value: t?.devis ?? 0, icon: FileText, trend: 12, trendUp: true, trendLabel: 'vs mois dernier', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+      { label: 'Contrats Actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 8, trendUp: true, trendLabel: 'ce mois', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, trend: 5, trendUp: false, trendLabel: 'engagement 72h', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+      { label: 'Total Paiements', value: f ? (f.totalPayments / 1000000).toFixed(1) : '0', unit: 'M FCFA', icon: Wallet, trend: 18, trendUp: true, trendLabel: 'vs N-1', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+    ],
+    agent: [
+      { label: 'Devis', value: t?.devis ?? 0, icon: FileText, trend: 23, trendUp: true, trendLabel: 'ce mois', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+      { label: 'Contrats actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 6, trendUp: true, trendLabel: 'portefeuille', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Commissions', value: f ? (f.totalCommissions / 1000000).toFixed(1) : '0', unit: 'M FCFA', icon: Wallet, trend: 14, trendUp: true, trendLabel: 'vs mois dernier', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+      { label: 'Taux transformation', value: t && t.devis > 0 ? Math.round((t.activeContrats / t.devis) * 100) : 0, unit: '%', icon: ArrowUpRight, trend: 4, trendUp: true, trendLabel: 'devis → contrats', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    ],
+    client: [
+      { label: 'Mes contrats actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 0, trendUp: true, trendLabel: 'Auto · Santé · Habitation', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Échéance proche', value: 1, icon: AlertTriangle, trend: 12, trendUp: false, trendLabel: 'dans 12 jours', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, trend: 0, trendUp: true, trendLabel: 'aucun sinistre actif', iconColor: 'text-slate-600 dark:text-slate-300', iconBg: 'bg-slate-100 dark:bg-slate-800' },
+      { label: 'Mes devis récents', value: t?.devis ?? 0, icon: FileText, trend: 0, trendUp: true, trendLabel: 'comparaisons effectuées', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+    ],
+    gestionnaire: [
+      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, trend: 5, trendUp: false, trendLabel: 'engagement 72h', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+      { label: 'Sinistres traités', value: (t?.sinistres ?? 0) - (t?.pendingSinistres ?? 0), icon: ShieldCheck, trend: 12, trendUp: true, trendLabel: 'dans les délais', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'En alerte (>72h)', value: 3, icon: AlertTriangle, trend: 0, trendUp: false, trendLabel: 'à traiter en urgence', iconColor: 'text-rose-600', iconBg: 'bg-rose-50 dark:bg-rose-900/40' },
+      { label: 'Délai moyen', value: 38, unit: 'h', icon: ArrowUpRight, trend: 22, trendUp: true, trendLabel: 'amélioration délai', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+    ],
+    correspondant: [
+      { label: 'Compagnies', value: t?.compagnies ?? 0, icon: Building2, trend: 0, trendUp: true, trendLabel: 'grilles tarifaires actives', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+      { label: 'Devis générés', value: t?.devis ?? 0, icon: ArrowUpRight, trend: 28, trendUp: true, trendLabel: 'via comparateur', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Contrats souscrits', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 15, trendUp: true, trendLabel: 'cette année', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+      { label: 'Utilisateurs actifs', value: t?.activeUsers ?? 0, icon: Users, trend: 0.2, trendUp: true, trendLabel: 'satisfaction clients', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+    ],
+  }
+
+  const cards = statsByRole[user.role] || statsByRole.admin
 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {stats.map((s) => (
+      {cards.map((s) => (
         <StatCard key={s.label} {...s} />
       ))}
     </div>

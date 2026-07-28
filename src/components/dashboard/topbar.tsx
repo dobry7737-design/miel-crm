@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTheme } from 'next-themes'
 import {
   Search,
@@ -66,7 +67,11 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const [paletteOpen, setPaletteOpen] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const searchResults = useMemo(() => searchAll(searchQuery), [searchQuery])
+  const { data: searchResults = [] } = useQuery({
+    queryKey: ['search', searchQuery],
+    queryFn: () => searchAll(searchQuery),
+    enabled: searchQuery.trim().length >= 2,
+  })
 
   const handleResultClick = (result: SearchResult) => {
     setPage(result.page)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Users,
   Edit,
@@ -39,7 +39,7 @@ import { useNav } from '@/lib/nav'
 import { Pagination } from '@/components/dashboard/pagination'
 import { usePagination } from '@/lib/use-pagination'
 import { ROLE_LABELS, type Role } from '@/lib/auth'
-import { UTILISATEURS_DATA, type Utilisateur } from '@/lib/data'
+import { api, type UserDTO } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 const STAT_CARDS = [
@@ -70,9 +70,9 @@ export function UtilisateursPage() {
   const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState<Role | 'all'>('all')
-  const [view, setView] = useState<Utilisateur | null>(null)
+  const [view, setView] = useState<UserDTO | null>(null)
   const [editOpen, setEditOpen] = useState(false)
-  const [editing, setEditing] = useState<Utilisateur | null>(null)
+  const [editing, setEditing] = useState<UserDTO | null>(null)
 
   useEffect(() => {
     setPrimaryAction(() => {
@@ -89,22 +89,11 @@ export function UtilisateursPage() {
     }
   }, [pendingAction, clearPendingAction, openPrimaryAction])
 
-  const filtered = useMemo(() => {
-    let result = UTILISATEURS_DATA
-    if (filterRole !== 'all') {
-      result = result.filter((u) => u.role === filterRole)
-    }
-    if (search) {
-      const q = search.toLowerCase()
-      result = result.filter(
-        (u) =>
-          u.nom.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q) ||
-          u.telephone.toLowerCase().includes(q)
-      )
-    }
-    return result
-  }, [search, filterRole])
+  const { data: resp, isLoading } = useQuery({
+    queryKey: ['utilisateurs', { role: filterRole !== 'all' ? filterRole : undefined, search }],
+    queryFn: () => api.getUsers({ role: filterRole !== 'all' ? filterRole : undefined, search: search || undefined }),
+  })
+  const filtered = resp?.data || []
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, filterRole])
@@ -209,8 +198,8 @@ export function UtilisateursPage() {
                             {u.avatar}
                           </span>
                           <div>
-                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.nom}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">{u.compagnie && `${u.compagnie}`}</p>
+                            <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.name}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{u.company?.nom || '' && `${u.company?.nom || ''}`}</p>
                           </div>
                         </div>
                       </td>
@@ -277,7 +266,7 @@ export function UtilisateursPage() {
                   {view.avatar}
                 </span>
                 <div>
-                  <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{view.nom}</p>
+                  <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{view.name}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{view.email}</p>
                 </div>
                 <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold', ROLE_BADGE_STYLES[view.role])}>
@@ -376,7 +365,7 @@ function UtilisateurEditModal({
 }: {
   open: boolean
   onOpenChange: (v: boolean) => void
-  editing: Utilisateur | null
+  editing: UserDTO | null
 }) {
   const [form, setForm] = useState(() => ({
     nom: editing?.nom ?? '',

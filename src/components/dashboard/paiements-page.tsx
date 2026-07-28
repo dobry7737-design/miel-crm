@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import {
   Wallet,
   TrendingUp,
@@ -26,7 +26,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { PAIEMENTS_DATA, formatFCFA, type Paiement } from '@/lib/data'
+import { api, formatFCFA, type PaiementDTO } from '@/lib/api'
 import { toast } from 'sonner'
 
 const STAT_CARDS = [
@@ -48,28 +48,13 @@ export function PaiementsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [moyenFilter, setMoyenFilter] = useState('')
-  const [view, setView] = useState<Paiement | null>(null)
+  const [view, setView] = useState<PaiementDTO | null>(null)
 
-  const filtered = useMemo(() => {
-    let result = PAIEMENTS_DATA
-    if (search) {
-      const q = search.toLowerCase()
-      result = result.filter(
-        (p) =>
-          p.reference.toLowerCase().includes(q) ||
-          p.client.toLowerCase().includes(q) ||
-          p.compagnie.toLowerCase().includes(q) ||
-          p.transactionId.toLowerCase().includes(q)
-      )
-    }
-    if (statusFilter) {
-      result = result.filter((p) => p.statut === statusFilter)
-    }
-    if (moyenFilter) {
-      result = result.filter((p) => p.moyen === moyenFilter)
-    }
-    return result
-  }, [search, statusFilter, moyenFilter])
+  const { data: resp, isLoading } = useQuery({
+    queryKey: ['paiements', { statut: statusFilter, moyen: moyenFilter, search }],
+    queryFn: () => api.getPaiements({ statut: statusFilter || undefined, moyen: moyenFilter || undefined, search: search || undefined }),
+  })
+  const filtered = resp?.data || []
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, statusFilter, moyenFilter])
@@ -185,15 +170,15 @@ export function PaiementsPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500 text-[10px] font-semibold text-white">
-                            {p.clientAvatar}
+                            {p.clientNameAvatar}
                           </span>
-                          <span className="text-slate-800 dark:text-slate-200">{p.client}</span>
+                          <span className="text-slate-800 dark:text-slate-200">{p.clientNameName}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3">
                         <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{p.contratRef}</span>
                       </td>
-                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{p.compagnie}</td>
+                      <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{p.companyName}</td>
                       <td className="px-5 py-3">
                         <div className={`flex items-center gap-1.5 ${moyenInfo.color}`}>
                           <MoyenIcon className="h-3.5 w-3.5" />
@@ -244,9 +229,9 @@ export function PaiementsPage() {
           {view && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <InfoField label="Client" value={view.client} />
+                <InfoField label="Client" value={view.clientName} />
                 <InfoField label="Contrat" value={view.contratRef} />
-                <InfoField label="Compagnie" value={view.compagnie} />
+                <InfoField label="Compagnie" value={view.companyName} />
                 <InfoField label="Moyen de paiement" value={view.moyen} />
                 <InfoField label="Date" value={view.date} />
                 <InfoField label="Statut" value={view.statut} />

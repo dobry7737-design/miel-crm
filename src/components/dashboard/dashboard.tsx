@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Calendar, ChevronDown, SlidersHorizontal } from 'lucide-react'
+import { QueryProvider } from '@/components/query-provider'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { Topbar } from '@/components/dashboard/topbar'
 import { StatCards } from '@/components/dashboard/stat-cards'
@@ -86,7 +87,8 @@ export function Dashboard() {
     user.role === 'admin' || user.role === 'gestionnaire' || user.role === 'agent'
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-950">
+    <QueryProvider>
+      <div className="flex h-screen w-full overflow-hidden bg-slate-50 dark:bg-slate-950">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="flex flex-1 flex-col overflow-hidden">
         <Topbar onMenuClick={() => setSidebarOpen(true)} />
@@ -155,5 +157,6 @@ export function Dashboard() {
         </div>
       </main>
     </div>
+    </QueryProvider>
   )
 }
