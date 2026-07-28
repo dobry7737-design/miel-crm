@@ -33,6 +33,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
 import { Pagination } from '@/components/dashboard/pagination'
@@ -396,6 +397,12 @@ function UtilisateurEditModal({
     setTimeout(() => {
       setSubmitting(false)
       setCompleted(true)
+      toast.success(
+        editing ? 'Utilisateur mis à jour' : 'Invitation envoyée',
+        {
+          description: `${form.nom} — Profil ${ROLE_LABELS[form.role]}.`,
+        }
+      )
     }, 800)
   }
 

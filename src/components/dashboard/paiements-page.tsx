@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { PAIEMENTS_DATA, formatFCFA, type Paiement } from '@/lib/data'
+import { toast } from 'sonner'
 
 const STAT_CARDS = [
   { label: 'Volume total (30j)', value: '142,5 M', unit: 'FCFA', icon: Wallet, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
@@ -45,22 +46,61 @@ const MOYEN_ICON: Record<Paiement['moyen'], { icon: typeof Smartphone; color: st
 
 export function PaiementsPage() {
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [moyenFilter, setMoyenFilter] = useState('')
   const [view, setView] = useState<Paiement | null>(null)
 
   const filtered = useMemo(() => {
-    if (!search) return PAIEMENTS_DATA
-    const q = search.toLowerCase()
-    return PAIEMENTS_DATA.filter(
-      (p) =>
-        p.reference.toLowerCase().includes(q) ||
-        p.client.toLowerCase().includes(q) ||
-        p.compagnie.toLowerCase().includes(q) ||
-        p.transactionId.toLowerCase().includes(q)
-    )
-  }, [search])
+    let result = PAIEMENTS_DATA
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (p) =>
+          p.reference.toLowerCase().includes(q) ||
+          p.client.toLowerCase().includes(q) ||
+          p.compagnie.toLowerCase().includes(q) ||
+          p.transactionId.toLowerCase().includes(q)
+      )
+    }
+    if (statusFilter) {
+      result = result.filter((p) => p.statut === statusFilter)
+    }
+    if (moyenFilter) {
+      result = result.filter((p) => p.moyen === moyenFilter)
+    }
+    return result
+  }, [search, statusFilter, moyenFilter])
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
-    usePagination(filtered, 5, [search])
+    usePagination(filtered, 5, [search, statusFilter, moyenFilter])
+
+  const filters = [
+    {
+      title: 'Statut',
+      selected: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { label: 'Tous', value: '' },
+        { label: 'Réussi', value: 'Réussi' },
+        { label: 'En attente', value: 'En attente' },
+        { label: 'Échoué', value: 'Échoué' },
+        { label: 'Remboursé', value: 'Remboursé' },
+      ],
+    },
+    {
+      title: 'Moyen de paiement',
+      selected: moyenFilter,
+      onChange: setMoyenFilter,
+      options: [
+        { label: 'Tous', value: '' },
+        { label: 'Orange Money', value: 'Orange Money' },
+        { label: 'Wave', value: 'Wave' },
+        { label: 'Moov Money', value: 'Moov Money' },
+        { label: 'Carte bancaire', value: 'Carte bancaire' },
+        { label: 'Virement', value: 'Virement' },
+      ],
+    },
+  ]
 
   return (
     <div>
@@ -72,6 +112,7 @@ export function PaiementsPage() {
         searchPlaceholder="Rechercher un paiement, une transaction..."
         secondaryActionLabel="Exporter"
         onSecondaryAction={() => {}}
+        filters={filters}
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -233,12 +274,29 @@ export function PaiementsPage() {
                 <Button variant="outline" size="sm" onClick={() => setView(null)}>
                   Fermer
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    toast.success('Reçu PDF généré', {
+                      description: `Reçu de ${view.reference} téléchargé.`,
+                    })
+                  }
+                >
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   Reçu PDF
                 </Button>
                 {view.statut === 'En attente' && (
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => {
+                      toast.success('Paiement marqué comme reçu', {
+                        description: `Paiement ${view.reference} réconcilié manuellement.`,
+                      })
+                      setView(null)
+                    }}
+                  >
                     Marquer comme reçu
                   </Button>
                 )}

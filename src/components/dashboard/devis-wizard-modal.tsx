@@ -23,6 +23,7 @@ import {
   RotateCcw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface DevisWizardModalProps {
   open: boolean
@@ -204,6 +205,9 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
       setSubmitting(false)
       setCompleted(true)
       onComplete?.(data)
+      toast.success('Devis transmis aux compagnies partenaires', {
+        description: `Branche ${data.branche} · ${data.garanties.length} garantie(s) · ${data.duree}.`,
+      })
     }, 800)
   }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   LayoutDashboard,
   FileText,
@@ -13,10 +14,21 @@ import {
   BadgeCheck,
   X,
   LifeBuoy,
+  AlertTriangle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth, ROLE_LABELS, type Role } from '@/lib/auth'
 import { useNav, type PageId } from '@/lib/nav'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 
 interface NavItem {
   id: PageId
@@ -91,8 +103,19 @@ export function Sidebar({
 }) {
   const { user, logout } = useAuth()
   const { page, setPage } = useNav()
+  const [confirmLogout, setConfirmLogout] = useState(false)
 
   if (!user) return null
+
+  const handleLogout = () => {
+    setConfirmLogout(false)
+    setTimeout(() => {
+      toast.success('Déconnexion réussie', {
+        description: `À bientôt, ${user.name}.`,
+      })
+      logout()
+    }, 200)
+  }
 
   const visibleItems = navItems.filter((item) =>
     item.roles.includes(user.role)
@@ -207,7 +230,7 @@ export function Sidebar({
             </div>
           </div>
           <button
-            onClick={logout}
+            onClick={() => setConfirmLogout(true)}
             className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/40 dark:hover:text-red-400"
           >
             <LogOut className="h-4 w-4" strokeWidth={2} />
@@ -215,6 +238,43 @@ export function Sidebar({
           </button>
         </div>
       </aside>
+
+      {/* Logout confirmation modal */}
+      <Dialog open={confirmLogout} onOpenChange={setConfirmLogout}>
+        <DialogContent className="max-w-sm bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              Confirmer la déconnexion
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Voulez-vous vraiment vous déconnecter de votre session AAM ?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl bg-slate-100 p-3 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <p>
+              <span className="font-semibold">Session actuelle :</span>{' '}
+              {user.name} ({ROLE_LABELS[user.role]})
+            </p>
+            <p className="mt-1">
+              Vous devrez vous reconnecter pour accéder à nouveau à la plateforme.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setConfirmLogout(false)}>
+              Annuler
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <LogOut className="mr-1.5 h-3.5 w-3.5" />
+              Se déconnecter
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

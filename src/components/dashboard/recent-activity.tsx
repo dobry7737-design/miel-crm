@@ -2,6 +2,7 @@
 
 import { ChevronRight } from 'lucide-react'
 import { ChartCard } from './chart-card'
+import { useNav } from '@/lib/nav'
 
 interface Activity {
   id: string
@@ -68,6 +69,7 @@ const activities: Activity[] = [
 ]
 
 export function RecentActivity() {
+  const { setPage } = useNav()
   return (
     <ChartCard
       title="Activité Récente"
@@ -75,7 +77,10 @@ export function RecentActivity() {
       className="lg:col-span-2"
       bodyClassName="flex flex-col gap-1 -mx-1"
       action={
-        <button className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
+        <button
+          onClick={() => setPage('devis')}
+          className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-blue-600 transition hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+        >
           Tout voir
           <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
         </button>

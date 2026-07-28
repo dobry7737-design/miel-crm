@@ -29,6 +29,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
+import { toast } from 'sonner'
 import { Pagination } from '@/components/dashboard/pagination'
 import { usePagination } from '@/lib/use-pagination'
 import { SINISTRES_DATA, formatFCFA, type Sinistre, type Branch } from '@/lib/data'
@@ -46,6 +47,8 @@ export function SinistresPage() {
   const { setPrimaryAction, openPrimaryAction } = useUI()
   const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [brancheFilter, setBrancheFilter] = useState('')
   const [viewSinistre, setViewSinistre] = useState<Sinistre | null>(null)
   const [declareOpen, setDeclareOpen] = useState(false)
 
@@ -62,19 +65,57 @@ export function SinistresPage() {
   }, [pendingAction, clearPendingAction, openPrimaryAction])
 
   const filtered = useMemo(() => {
-    if (!search) return SINISTRES_DATA
-    const q = search.toLowerCase()
-    return SINISTRES_DATA.filter(
-      (s) =>
-        s.reference.toLowerCase().includes(q) ||
-        s.client.toLowerCase().includes(q) ||
-        s.compagnie.toLowerCase().includes(q) ||
-        s.branche.toLowerCase().includes(q)
-    )
-  }, [search])
+    let result = SINISTRES_DATA
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (s) =>
+          s.reference.toLowerCase().includes(q) ||
+          s.client.toLowerCase().includes(q) ||
+          s.compagnie.toLowerCase().includes(q) ||
+          s.branche.toLowerCase().includes(q)
+      )
+    }
+    if (statusFilter) {
+      result = result.filter((s) => s.statut === statusFilter)
+    }
+    if (brancheFilter) {
+      result = result.filter((s) => s.branche === brancheFilter)
+    }
+    return result
+  }, [search, statusFilter, brancheFilter])
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
-    usePagination(filtered, 5, [search])
+    usePagination(filtered, 5, [search, statusFilter, brancheFilter])
+
+  const filters = [
+    {
+      title: 'Statut',
+      selected: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { label: 'Tous', value: '' },
+        { label: 'Déclaré', value: 'Déclaré' },
+        { label: 'En instruction', value: 'En instruction' },
+        { label: 'Traité', value: 'Traité' },
+        { label: 'Validé', value: 'Validé' },
+        { label: 'Rejeté', value: 'Rejeté' },
+      ],
+    },
+    {
+      title: 'Branche',
+      selected: brancheFilter,
+      onChange: setBrancheFilter,
+      options: [
+        { label: 'Toutes', value: '' },
+        { label: 'Auto', value: 'Auto' },
+        { label: 'Santé', value: 'Santé' },
+        { label: 'Habitation', value: 'Habitation' },
+        { label: 'Voyage', value: 'Voyage' },
+        { label: 'Vie', value: 'Vie' },
+      ],
+    },
+  ]
 
   return (
     <div>
@@ -86,6 +127,7 @@ export function SinistresPage() {
         searchPlaceholder="Rechercher un sinistre, un client..."
         primaryActionLabel="Déclarer un sinistre"
         onPrimaryAction={() => setDeclareOpen(true)}
+        filters={filters}
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -264,7 +306,16 @@ export function SinistresPage() {
                   Fermer
                 </Button>
                 {viewSinistre.statut === 'En instruction' && (
-                  <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                  <Button
+                    size="sm"
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => {
+                      toast.success('Remboursement validé', {
+                        description: `Sinistre ${viewSinistre.reference} — remboursement de ${formatFCFA(viewSinistre.montantDemande)} validé.`,
+                      })
+                      setViewSinistre(null)
+                    }}
+                  >
                     Valider le remboursement
                   </Button>
                 )}
@@ -325,6 +376,9 @@ function DeclareSinistreModal({
     setTimeout(() => {
       setSubmitting(false)
       setCompleted(true)
+      toast.success('Sinistre déclaré avec succès', {
+        description: `Référence SIN-2026-0099 · Engagement de traitement sous 72h.`,
+      })
     }, 1000)
   }
 

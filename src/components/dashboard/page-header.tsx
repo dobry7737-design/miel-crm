@@ -1,7 +1,19 @@
 'use client'
 
-import { Plus, Search, Download, Filter, ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+import { Plus, Search, Download, Filter, ChevronDown, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+
+interface FilterOption {
+  label: string
+  value: string
+}
 
 interface PageHeaderProps {
   title: string
@@ -14,6 +26,12 @@ interface PageHeaderProps {
   secondaryActionLabel?: string
   onSecondaryAction?: () => void
   filterLabel?: string
+  filters?: {
+    title: string
+    options: FilterOption[]
+    selected?: string
+    onChange?: (value: string) => void
+  }[]
 }
 
 export function PageHeader({
@@ -27,7 +45,27 @@ export function PageHeader({
   secondaryActionLabel = 'Exporter',
   onSecondaryAction,
   filterLabel = 'Filtrer',
+  filters = [],
 }: PageHeaderProps) {
+  const [exporting, setExporting] = useState(false)
+
+  const handleExport = () => {
+    if (onSecondaryAction) {
+      onSecondaryAction()
+      return
+    }
+    setExporting(true)
+    toast.info('Export en cours…', {
+      description: 'Génération du fichier Excel des données filtrées.',
+    })
+    setTimeout(() => {
+      setExporting(false)
+      toast.success('Export terminé', {
+        description: 'Le fichier a été téléchargé avec succès.',
+      })
+    }, 1200)
+  }
+
   return (
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -53,22 +91,92 @@ export function PageHeader({
             />
           </div>
         )}
-        <button className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100">
-          <Filter className="h-3.5 w-3.5" strokeWidth={2} />
-          {filterLabel}
-          <ChevronDown className="h-3 w-3 text-slate-400 dark:text-slate-500" strokeWidth={2.5} />
-        </button>
-        {onSecondaryAction && (
-          <button
-            onClick={onSecondaryAction}
-            className={cn(
-              'flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100'
-            )}
-          >
-            <Download className="h-3.5 w-3.5" strokeWidth={2} />
-            <span className="hidden sm:inline">{secondaryActionLabel}</span>
+        {filters.length > 0 ? (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100">
+                <Filter className="h-3.5 w-3.5" strokeWidth={2} />
+                {filterLabel}
+                <ChevronDown className="h-3 w-3 text-slate-400 dark:text-slate-500" strokeWidth={2.5} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="w-72 p-0 dark:border-slate-700 dark:bg-slate-900"
+            >
+              <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Filtres
+                </h3>
+              </div>
+              <div className="max-h-80 overflow-y-auto p-2">
+                {filters.map((f) => (
+                  <div key={f.title} className="border-b border-slate-100 px-2 py-2 last:border-0 dark:border-slate-800">
+                    <p className="mb-1.5 px-1 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      {f.title}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {f.options.map((o) => {
+                        const isSelected = f.selected === o.value
+                        return (
+                          <button
+                            key={o.value}
+                            onClick={() => f.onChange?.(o.value)}
+                            className={cn(
+                              'rounded-md border px-2 py-1 text-xs font-medium transition',
+                              isSelected
+                                ? 'border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+                                : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800'
+                            )}
+                          >
+                            {o.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2 border-t border-slate-100 p-2 dark:border-slate-800">
+                <button
+                  onClick={() => filters.forEach((f) => f.onChange?.(''))}
+                  className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-500 transition hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800"
+                >
+                  Réinitialiser
+                </button>
+                <button
+                  onClick={() => toast.success('Filtres appliqués')}
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                >
+                  Appliquer
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : (
+          <button className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100">
+            <Filter className="h-3.5 w-3.5" strokeWidth={2} />
+            {filterLabel}
+            <ChevronDown className="h-3 w-3 text-slate-400 dark:text-slate-500" strokeWidth={2.5} />
           </button>
         )}
+        <button
+          onClick={handleExport}
+          disabled={exporting}
+          className={cn(
+            'flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
+            exporting && 'opacity-60'
+          )}
+        >
+          {exporting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2} />
+          ) : (
+            <Download className="h-3.5 w-3.5" strokeWidth={2} />
+          )}
+          <span className="hidden sm:inline">
+            {exporting ? 'Export...' : secondaryActionLabel}
+          </span>
+        </button>
         {primaryActionLabel && onPrimaryAction && (
           <button
             onClick={onPrimaryAction}

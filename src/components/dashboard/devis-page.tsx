@@ -28,6 +28,7 @@ import { useAuth } from '@/lib/auth'
 import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
 import { usePagination } from '@/lib/use-pagination'
+import { toast } from 'sonner'
 
 const STAT_CARDS = [
   { label: 'Total devis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
@@ -41,6 +42,8 @@ export function DevisPage() {
   const { setPrimaryAction, openPrimaryAction } = useUI()
   const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [brancheFilter, setBrancheFilter] = useState('')
   const [wizardOpen, setWizardOpen] = useState(false)
   const [viewDevis, setViewDevis] = useState<Devis | null>(null)
 
@@ -59,19 +62,57 @@ export function DevisPage() {
   }, [pendingAction, clearPendingAction, openPrimaryAction])
 
   const filtered = useMemo(() => {
-    if (!search) return DEVIS_DATA
-    const q = search.toLowerCase()
-    return DEVIS_DATA.filter(
-      (d) =>
-        d.reference.toLowerCase().includes(q) ||
-        d.client.toLowerCase().includes(q) ||
-        d.compagnie.toLowerCase().includes(q) ||
-        d.branche.toLowerCase().includes(q)
-    )
-  }, [search])
+    let result = DEVIS_DATA
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (d) =>
+          d.reference.toLowerCase().includes(q) ||
+          d.client.toLowerCase().includes(q) ||
+          d.compagnie.toLowerCase().includes(q) ||
+          d.branche.toLowerCase().includes(q)
+      )
+    }
+    if (statusFilter) {
+      result = result.filter((d) => d.statut === statusFilter)
+    }
+    if (brancheFilter) {
+      result = result.filter((d) => d.branche === brancheFilter)
+    }
+    return result
+  }, [search, statusFilter, brancheFilter])
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
-    usePagination(filtered, 5, [search])
+    usePagination(filtered, 5, [search, statusFilter, brancheFilter])
+
+  const filters = [
+    {
+      title: 'Statut',
+      selected: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { label: 'Tous', value: '' },
+        { label: 'Brouillon', value: 'Brouillon' },
+        { label: 'Émis', value: 'Émis' },
+        { label: 'Transformé', value: 'Transformé' },
+        { label: 'Expiré', value: 'Expiré' },
+        { label: 'Refusé', value: 'Refusé' },
+      ],
+    },
+    {
+      title: 'Branche',
+      selected: brancheFilter,
+      onChange: setBrancheFilter,
+      options: [
+        { label: 'Toutes', value: '' },
+        { label: 'Auto', value: 'Auto' },
+        { label: 'Santé', value: 'Santé' },
+        { label: 'Habitation', value: 'Habitation' },
+        { label: 'Voyage', value: 'Voyage' },
+        { label: 'Vie', value: 'Vie' },
+      ],
+    },
+  ]
 
   return (
     <div>
@@ -83,6 +124,7 @@ export function DevisPage() {
         searchPlaceholder="Rechercher une référence, un client, une compagnie..."
         primaryActionLabel={user?.role === 'client' ? 'Demander un devis' : 'Nouveau devis'}
         onPrimaryAction={() => setWizardOpen(true)}
+        filters={filters}
       />
 
       {/* Stat cards */}
@@ -267,7 +309,16 @@ export function DevisPage() {
                 <Button variant="outline" size="sm" onClick={() => setViewDevis(null)}>
                   Fermer
                 </Button>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    toast.success('Devis transformé en contrat', {
+                      description: `Devis ${viewDevis.reference} converti en contrat actif.`,
+                    })
+                    setViewDevis(null)
+                  }}
+                >
                   Transformer en contrat
                 </Button>
               </div>

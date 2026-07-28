@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 const TABS = [
   { id: 'general', label: 'Général', icon: Building2 },
@@ -93,10 +94,14 @@ function SaveButton({ onSave }: { onSave?: () => void }) {
 
   const handleClick = () => {
     setSaving(true)
+    toast.info('Enregistrement des modifications…')
     setTimeout(() => {
       setSaving(false)
       setSaved(true)
       onSave?.()
+      toast.success('Paramètres enregistrés', {
+        description: 'Vos modifications ont été sauvegardées avec succès.',
+      })
       setTimeout(() => setSaved(false), 2000)
     }, 600)
   }

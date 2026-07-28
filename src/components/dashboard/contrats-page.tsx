@@ -25,6 +25,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { CONTRATS_DATA, formatFCFA, type Contrat } from '@/lib/data'
 import { usePagination } from '@/lib/use-pagination'
+import { toast } from 'sonner'
 
 const STAT_CARDS = [
   { label: 'Contrats actifs', value: '856', icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
@@ -35,22 +36,61 @@ const STAT_CARDS = [
 
 export function ContratsPage() {
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [brancheFilter, setBrancheFilter] = useState('')
   const [viewContrat, setViewContrat] = useState<Contrat | null>(null)
 
   const filtered = useMemo(() => {
-    if (!search) return CONTRATS_DATA
-    const q = search.toLowerCase()
-    return CONTRATS_DATA.filter(
-      (c) =>
-        c.reference.toLowerCase().includes(q) ||
-        c.client.toLowerCase().includes(q) ||
-        c.compagnie.toLowerCase().includes(q) ||
-        c.branche.toLowerCase().includes(q)
-    )
-  }, [search])
+    let result = CONTRATS_DATA
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (c) =>
+          c.reference.toLowerCase().includes(q) ||
+          c.client.toLowerCase().includes(q) ||
+          c.compagnie.toLowerCase().includes(q) ||
+          c.branche.toLowerCase().includes(q)
+      )
+    }
+    if (statusFilter) {
+      result = result.filter((c) => c.statut === statusFilter)
+    }
+    if (brancheFilter) {
+      result = result.filter((c) => c.branche === brancheFilter)
+    }
+    return result
+  }, [search, statusFilter, brancheFilter])
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
-    usePagination(filtered, 5, [search])
+    usePagination(filtered, 5, [search, statusFilter, brancheFilter])
+
+  const filters = [
+    {
+      title: 'Statut',
+      selected: statusFilter,
+      onChange: setStatusFilter,
+      options: [
+        { label: 'Tous', value: '' },
+        { label: 'Actif', value: 'Actif' },
+        { label: 'En attente', value: 'En attente' },
+        { label: 'Suspendu', value: 'Suspendu' },
+        { label: 'Résilié', value: 'Résilié' },
+      ],
+    },
+    {
+      title: 'Branche',
+      selected: brancheFilter,
+      onChange: setBrancheFilter,
+      options: [
+        { label: 'Toutes', value: '' },
+        { label: 'Auto', value: 'Auto' },
+        { label: 'Santé', value: 'Santé' },
+        { label: 'Habitation', value: 'Habitation' },
+        { label: 'Voyage', value: 'Voyage' },
+        { label: 'Vie', value: 'Vie' },
+      ],
+    },
+  ]
 
   return (
     <div>
@@ -62,6 +102,7 @@ export function ContratsPage() {
         searchPlaceholder="Rechercher un contrat, un client..."
         secondaryActionLabel="Exporter"
         onSecondaryAction={() => {}}
+        filters={filters}
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -208,11 +249,29 @@ export function ContratsPage() {
               </div>
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
-                <Button variant="outline" size="sm">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    toast.success('Attestation PDF générée', {
+                      description: `Attestation de ${viewContrat.reference} téléchargée.`,
+                    })
+                  }
+                >
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   Attestation PDF
                 </Button>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">Renouveler</Button>
+                <Button
+                  size="sm"
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() =>
+                    toast.success('Renouvellement initié', {
+                      description: `Renouvellement de ${viewContrat.reference} en cours.`,
+                    })
+                  }
+                >
+                  Renouveler
+                </Button>
               </div>
             </div>
           )}

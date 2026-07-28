@@ -25,6 +25,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
 import { Pagination } from '@/components/dashboard/pagination'
@@ -330,6 +331,12 @@ function CompagnieEditModal({
     setTimeout(() => {
       setSubmitting(false)
       setCompleted(true)
+      toast.success(
+        editing ? 'Compagnie mise à jour' : 'Compagnie ajoutée',
+        {
+          description: `${form.nom} (${form.agrement}) — ${form.branches.length} branche(s) couverte(s).`,
+        }
+      )
     }, 800)
   }
 
