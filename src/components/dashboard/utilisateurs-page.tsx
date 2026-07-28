@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useUI } from '@/lib/ui-store'
+import { useNav } from '@/lib/nav'
 import { ROLE_LABELS, type Role } from '@/lib/auth'
 import { UTILISATEURS_DATA, type Utilisateur } from '@/lib/data'
 import { cn } from '@/lib/utils'
@@ -62,7 +63,8 @@ const ROLE_BADGE_STYLES: Record<Role, string> = {
 }
 
 export function UtilisateursPage() {
-  const { setPrimaryAction } = useUI()
+  const { setPrimaryAction, openPrimaryAction } = useUI()
+  const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
   const [filterRole, setFilterRole] = useState<Role | 'all'>('all')
   const [view, setView] = useState<Utilisateur | null>(null)
@@ -76,6 +78,13 @@ export function UtilisateursPage() {
     })
     return () => setPrimaryAction(null)
   }, [setPrimaryAction])
+
+  useEffect(() => {
+    if (pendingAction) {
+      openPrimaryAction()
+      clearPendingAction()
+    }
+  }, [pendingAction, clearPendingAction, openPrimaryAction])
 
   const filtered = useMemo(() => {
     let result = UTILISATEURS_DATA

@@ -60,13 +60,17 @@ const PAGE_RBAC: Record<PageId, Role[]> = {
 export function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { user } = useAuth()
-  const { page, setPage } = useNav()
+  const { page, setPage, goToPageWithAction } = useNav()
   const { setPrimaryAction } = useUI()
 
-  // Reset primary action on page change
+  // Register dashboard primary action (navigate to devis + open wizard)
   useEffect(() => {
+    if (page === 'dashboard') {
+      setPrimaryAction(() => goToPageWithAction('devis'))
+      return () => setPrimaryAction(null)
+    }
     setPrimaryAction(null)
-  }, [page, setPrimaryAction])
+  }, [page, setPrimaryAction, goToPageWithAction])
 
   if (!user) return null
 

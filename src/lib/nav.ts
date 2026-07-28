@@ -15,10 +15,16 @@ export type PageId =
 
 interface NavState {
   page: PageId
+  pendingAction: boolean // when true, target page should auto-open its primary modal
   setPage: (page: PageId) => void
+  goToPageWithAction: (page: PageId) => void
+  clearPendingAction: () => void
 }
 
 export const useNav = create<NavState>((set) => ({
   page: 'dashboard',
-  setPage: (page) => set({ page }),
+  pendingAction: false,
+  setPage: (page) => set({ page, pendingAction: false }),
+  goToPageWithAction: (page) => set({ page, pendingAction: true }),
+  clearPendingAction: () => set({ pendingAction: false }),
 }))

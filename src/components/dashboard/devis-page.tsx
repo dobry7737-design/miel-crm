@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button'
 import { DEVIS_DATA, formatFCFA, type Devis } from '@/lib/data'
 import { useAuth } from '@/lib/auth'
 import { useUI } from '@/lib/ui-store'
+import { useNav } from '@/lib/nav'
 
 const STAT_CARDS = [
   { label: 'Total devis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50' },
@@ -35,7 +36,8 @@ const STAT_CARDS = [
 
 export function DevisPage() {
   const { user } = useAuth()
-  const { setPrimaryAction } = useUI()
+  const { setPrimaryAction, openPrimaryAction } = useUI()
+  const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
   const [wizardOpen, setWizardOpen] = useState(false)
   const [viewDevis, setViewDevis] = useState<Devis | null>(null)
@@ -45,6 +47,14 @@ export function DevisPage() {
     setPrimaryAction(() => setWizardOpen(true))
     return () => setPrimaryAction(null)
   }, [setPrimaryAction, setWizardOpen])
+
+  // Auto-open wizard when navigated with pending action
+  useEffect(() => {
+    if (pendingAction) {
+      openPrimaryAction()
+      clearPendingAction()
+    }
+  }, [pendingAction, clearPendingAction, openPrimaryAction])
 
   const filtered = useMemo(() => {
     if (!search) return DEVIS_DATA

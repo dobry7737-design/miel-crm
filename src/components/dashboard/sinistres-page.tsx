@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useUI } from '@/lib/ui-store'
+import { useNav } from '@/lib/nav'
 import { SINISTRES_DATA, formatFCFA, type Sinistre, type Branch } from '@/lib/data'
 
 const STAT_CARDS = [
@@ -40,7 +41,8 @@ const STAT_CARDS = [
 const BRANCHES: Branch[] = ['Auto', 'Santé', 'Habitation', 'Voyage', 'Vie']
 
 export function SinistresPage() {
-  const { setPrimaryAction } = useUI()
+  const { setPrimaryAction, openPrimaryAction } = useUI()
+  const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
   const [viewSinistre, setViewSinistre] = useState<Sinistre | null>(null)
   const [declareOpen, setDeclareOpen] = useState(false)
@@ -49,6 +51,13 @@ export function SinistresPage() {
     setPrimaryAction(() => setDeclareOpen(true))
     return () => setPrimaryAction(null)
   }, [setPrimaryAction])
+
+  useEffect(() => {
+    if (pendingAction) {
+      openPrimaryAction()
+      clearPendingAction()
+    }
+  }, [pendingAction, clearPendingAction, openPrimaryAction])
 
   const filtered = useMemo(() => {
     if (!search) return SINISTRES_DATA

@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useUI } from '@/lib/ui-store'
+import { useNav } from '@/lib/nav'
 import { COMPAGNIES_DATA, type Compagnie } from '@/lib/data'
 
 const STAT_CARDS = [
@@ -36,7 +37,8 @@ const STAT_CARDS = [
 ]
 
 export function CompagniesPage() {
-  const { setPrimaryAction } = useUI()
+  const { setPrimaryAction, openPrimaryAction } = useUI()
+  const { pendingAction, clearPendingAction } = useNav()
   const [search, setSearch] = useState('')
   const [view, setView] = useState<Compagnie | null>(null)
   const [editOpen, setEditOpen] = useState(false)
@@ -49,6 +51,13 @@ export function CompagniesPage() {
     })
     return () => setPrimaryAction(null)
   }, [setPrimaryAction])
+
+  useEffect(() => {
+    if (pendingAction) {
+      openPrimaryAction()
+      clearPendingAction()
+    }
+  }, [pendingAction, clearPendingAction, openPrimaryAction])
 
   const filtered = useMemo(() => {
     if (!search) return COMPAGNIES_DATA
