@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {
   LayoutDashboard,
   FileText,
@@ -17,9 +16,10 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth, ROLE_LABELS, type Role } from '@/lib/auth'
+import { useNav, type PageId } from '@/lib/nav'
 
 interface NavItem {
-  id: string
+  id: PageId
   label: string
   icon: typeof LayoutDashboard
   roles: Role[] // RBAC: which roles can see this item
@@ -90,7 +90,7 @@ export function Sidebar({
   onClose: () => void
 }) {
   const { user, logout } = useAuth()
-  const [active, setActive] = useState('dashboard')
+  const { page, setPage } = useNav()
 
   if (!user) return null
 
@@ -145,12 +145,12 @@ export function Sidebar({
           </p>
           {visibleItems.map((item) => {
             const Icon = item.icon
-            const isActive = active === item.id
+            const isActive = page === item.id
             return (
               <button
                 key={item.id}
                 onClick={() => {
-                  setActive(item.id)
+                  setPage(item.id)
                   onClose()
                 }}
                 className={cn(
