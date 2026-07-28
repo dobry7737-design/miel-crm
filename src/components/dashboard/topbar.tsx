@@ -4,7 +4,7 @@ import { Search, RefreshCw, Plus, Bell, Menu } from 'lucide-react'
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
-    <header className="relative flex items-center gap-3 border-b border-slate-200/80 bg-white/60 px-4 py-4 backdrop-blur-xl sm:px-6">
+    <header className="relative flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-6">
       {/* Mobile menu button */}
       {onMenuClick && (
         <button

@@ -38,7 +38,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       />
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col border-r border-slate-200/80 bg-white/95 px-4 py-5 backdrop-blur-xl transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 lg:bg-white/80',
+          'fixed inset-y-0 left-0 z-50 flex w-60 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-5 transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0',
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
