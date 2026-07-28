@@ -87,9 +87,10 @@ export function ActiveProjects() {
       bodyClassName="flex flex-col gap-2.5 -mx-1"
     >
       {partners.map((p) => (
-        <div
+        <button
           key={p.id}
-          className="flex items-center gap-3 rounded-lg px-1 py-2 transition hover:bg-slate-50 dark:hover:bg-slate-800/60"
+          onClick={() => setPage('compagnies')}
+          className="flex w-full items-center gap-3 rounded-lg px-1 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60"
         >
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold text-white ${p.iconColor}`}
@@ -109,7 +110,7 @@ export function ActiveProjects() {
           >
             {p.status}
           </span>
-        </div>
+        </button>
       ))}
     </ChartCard>
   )

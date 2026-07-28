@@ -29,6 +29,7 @@ import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
 import { usePagination } from '@/lib/use-pagination'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 const STAT_CARDS = [
   { label: 'Total devis', value: '1 248', icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
@@ -127,29 +128,46 @@ export function DevisPage() {
         filters={filters}
       />
 
-      {/* Stat cards */}
+      {/* Stat cards - clickable to apply filter */}
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((s) => {
+        {STAT_CARDS.map((s, idx) => {
           const Icon = s.icon
+          // Card 0 (Total) resets filter, card 2 (Transformés) filters by statut
+          const onClick =
+            idx === 0
+              ? () => {
+                  setStatusFilter('')
+                  setBrancheFilter('')
+                  setSearch('')
+                }
+              : idx === 2
+                ? () => setStatusFilter('Transformé')
+                : undefined
           return (
-            <div
+            <button
               key={s.label}
-              className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30"
+              onClick={onClick}
+              className={cn(
+                'flex flex-col gap-2 rounded-2xl border bg-white p-4 text-left shadow-sm shadow-slate-200/50 transition hover:shadow-md dark:bg-slate-900 dark:shadow-slate-950/30',
+                onClick
+                  ? 'border-slate-200 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:hover:border-slate-700 dark:hover:bg-slate-800/50'
+                  : 'border-slate-200 cursor-default dark:border-slate-800'
+              )}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-slate-500">{s.label}</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{s.label}</span>
                 <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${s.bg}`}>
                   <Icon className={`h-4 w-4 ${s.color}`} strokeWidth={2} />
                 </div>
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
+                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
                   {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {s.trend}
                 </span>
               </div>
-            </div>
+            </button>
           )
         })}
       </div>

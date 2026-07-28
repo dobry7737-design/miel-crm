@@ -1,10 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { Search, RefreshCw, Plus, Bell, Menu, CheckCheck } from 'lucide-react'
+import {
+  Search,
+  RefreshCw,
+  Plus,
+  Bell,
+  Menu,
+  CheckCheck,
+  FileText,
+  ShieldCheck,
+  LifeBuoy,
+  Building2,
+  Wallet,
+  Users,
+  CornerDownLeft,
+  Command,
+} from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { useNav } from '@/lib/nav'
+import { useNav, type PageId } from '@/lib/nav'
 import { useUI } from '@/lib/ui-store'
 import { ThemeToggle } from '@/components/dashboard/theme-toggle'
 import { toast } from 'sonner'
@@ -13,6 +28,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { searchAll, type SearchResult } from '@/lib/search'
+import { CommandPalette } from '@/components/dashboard/command-palette'
 import { cn } from '@/lib/utils'
 
 interface NotifItem {
@@ -41,9 +58,42 @@ const TYPE_STYLES: Record<NotifItem['type'], { dot: string; bg: string; text: st
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user } = useAuth()
-  const { page } = useNav()
+  const { page, setPage } = useNav()
   const { openPrimaryAction } = useUI()
   const [refreshing, setRefreshing] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const searchResults = useMemo(() => searchAll(searchQuery), [searchQuery])
+
+  const handleResultClick = (result: SearchResult) => {
+    setPage(result.page)
+    setSearchOpen(false)
+    setSearchQuery('')
+    toast.info(`Navigation vers ${result.page}`, {
+      description: `${result.title} — ${result.subtitle}`,
+    })
+  }
+
+  // Keyboard shortcut: Ctrl/Cmd+K to open command palette, "/" to focus search
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPaletteOpen((p) => !p)
+      }
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [])
+
   if (!user) return null
 
   const getActionLabel = () => {
@@ -84,10 +134,82 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
       <div className="relative flex-1 max-w-md">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
         <input
+          ref={searchInputRef}
           type="text"
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value)
+            setSearchOpen(true)
+          }}
+          onFocus={() => setSearchOpen(true)}
+          onBlur={() => setTimeout(() => setSearchOpen(false), 200)}
           placeholder="Rechercher devis, contrats, sinistres, clients..."
-          className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-4 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-900 dark:focus:ring-blue-900/40"
+          className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-10 pr-16 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:bg-white focus:ring-4 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:bg-slate-900 dark:focus:ring-blue-900/40"
         />
+        <kbd
+          className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 select-none items-center gap-0.5 rounded border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 sm:flex"
+        >
+          <Command className="h-2.5 w-2.5" />K
+        </kbd>
+
+        {/* Live search results dropdown */}
+        {searchOpen && searchQuery.trim().length >= 2 && (
+          <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-96 overflow-y-auto rounded-xl border border-slate-200 bg-white py-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            {searchResults.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Aucun résultat pour « {searchQuery} »
+                </p>
+                <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
+                  Essayez un autre terme (référence, nom, branche…)
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''}
+                </p>
+                {searchResults.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => handleResultClick(r)}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800"
+                  >
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                      <ResultIcon type={r.type} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-slate-900 dark:text-slate-100">
+                        {r.title}
+                      </p>
+                      <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                        {r.subtitle}
+                      </p>
+                    </div>
+                    {r.meta && (
+                      <span className="shrink-0 text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                        {r.meta}
+                      </span>
+                    )}
+                    <CornerDownLeft className="h-3 w-3 shrink-0 text-slate-300 dark:text-slate-600" />
+                  </button>
+                ))}
+                <div className="mt-1 flex items-center justify-between border-t border-slate-100 px-3 pt-2 text-[10px] text-slate-400 dark:border-slate-800 dark:text-slate-500">
+                  <span>↵ pour naviguer</span>
+                  <button
+                    onClick={() => {
+                      setPaletteOpen(true)
+                      setSearchOpen(false)
+                    }}
+                    className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    Palette de commandes →
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="ml-auto flex items-center gap-2">
@@ -200,6 +322,28 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           </button>
         )}
       </div>
+
+      {/* Command palette modal (Ctrl/Cmd+K) */}
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </header>
   )
+}
+
+function ResultIcon({ type }: { type: SearchResult['type'] }) {
+  switch (type) {
+    case 'devis':
+      return <FileText className="h-3.5 w-3.5" strokeWidth={2} />
+    case 'contrat':
+      return <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
+    case 'sinistre':
+      return <LifeBuoy className="h-3.5 w-3.5" strokeWidth={2} />
+    case 'compagnie':
+      return <Building2 className="h-3.5 w-3.5" strokeWidth={2} />
+    case 'paiement':
+      return <Wallet className="h-3.5 w-3.5" strokeWidth={2} />
+    case 'utilisateur':
+      return <Users className="h-3.5 w-3.5" strokeWidth={2} />
+    default:
+      return <FileText className="h-3.5 w-3.5" strokeWidth={2} />
+  }
 }
