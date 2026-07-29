@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { verifyPassword } from '@/lib/password'
+import {
+  clearSessionCookie,
+  setSessionCookie,
+  signSession,
+  type SessionRole,
+} from '@/lib/session'
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,11 +21,11 @@ export async function POST(req: NextRequest) {
     }
 
     const user = await db.user.findUnique({
-      where: { email: email.toLowerCase() },
+      where: { email: String(email).toLowerCase().trim() },
       include: { company: true },
     })
 
-    if (!user || user.password !== password) {
+    if (!user || !(await verifyPassword(password, user.password))) {
       return NextResponse.json(
         { error: 'Identifiants incorrects' },
         { status: 401 }
@@ -27,18 +34,18 @@ export async function POST(req: NextRequest) {
 
     if (user.statut === 'Suspendu') {
       return NextResponse.json(
-        { error: 'Compte suspendu. Contactez l\'administrateur.' },
+        {
+          error: "Compte suspendu. Contactez l'administrateur.",
+        },
         { status: 403 }
       )
     }
 
-    // Update last login
     await db.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     })
 
-    // Create audit log
     await db.auditLog.create({
       data: {
         userId: user.id,
@@ -51,7 +58,14 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({
+    const token = await signSession({
+      userId: user.id,
+      email: user.email,
+      role: user.role as SessionRole,
+      companyId: user.companyId,
+    })
+
+    const res = NextResponse.json({
       user: {
         id: user.id,
         name: user.name,
@@ -64,8 +78,10 @@ export async function POST(req: NextRequest) {
           ? { id: user.company.id, name: user.company.nom }
           : null,
       },
-      token: `aam-${user.id}-${Date.now()}`, // simple token (demo)
     })
+
+    setSessionCookie(res, token)
+    return res
   } catch (error) {
     return NextResponse.json(
       {

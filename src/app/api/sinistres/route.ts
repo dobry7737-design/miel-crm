@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import {
+  clientScopeWhere,
+  companyScopeWhere,
+  isAuthError,
+  mergeWhere,
+  requireRole,
+} from '@/lib/api-auth'
+
+const ROLES = ['admin', 'agent', 'client', 'gestionnaire'] as const
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireRole(req, [...ROLES])
+    if (isAuthError(auth)) return auth
+
     const { searchParams } = new URL(req.url)
     const statut = searchParams.get('statut')
     const branche = searchParams.get('branche')
     const search = searchParams.get('search')
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
     if (statut) where.statut = statut
     if (branche) where.branche = branche
     if (search) {
@@ -19,8 +31,10 @@ export async function GET(req: NextRequest) {
       ]
     }
 
+    const scoped = mergeWhere(where, clientScopeWhere(auth), companyScopeWhere(auth))
+
     const sinistres = await db.sinistre.findMany({
-      where,
+      where: scoped,
       include: {
         compagnie: { select: { id: true, nom: true } },
         client: { select: { id: true, name: true } },
@@ -39,14 +53,20 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireRole(req, ['admin', 'agent', 'client', 'gestionnaire'])
+    if (isAuthError(auth)) return auth
+
     const body = await req.json()
     const count = await db.sinistre.count()
-    const reference = `SIN-2026-${String(count + 99).padStart(4, '0')}`
+    const reference = `SIN-2026-${String(count + 1).padStart(4, '0')}`
+
+    const clientId =
+      auth.role === 'client' ? auth.userId : body.clientId || null
 
     const sinistre = await db.sinistre.create({
       data: {
         reference,
-        clientId: body.clientId || null,
+        clientId,
         clientName: body.clientName || '',
         clientAvatar: body.clientAvatar || '',
         branche: body.branche,
@@ -57,18 +77,21 @@ export async function POST(req: NextRequest) {
         montantDemande: body.montantDemande || 0,
         montantRembourse: body.montantRembourse || null,
         statut: body.statut || 'Déclaré',
-        dateDeclaration: body.dateDeclaration || new Date().toLocaleDateString('fr-FR'),
+        dateDeclaration:
+          body.dateDeclaration || new Date().toLocaleDateString('fr-FR'),
         dateTraitement: body.dateTraitement || null,
         delaiH: body.delaiH || 0,
         gestionnaire: body.gestionnaire || '',
-        pieces: Array.isArray(body.pieces) ? body.pieces.join(',') : body.pieces || '',
+        pieces: Array.isArray(body.pieces)
+          ? body.pieces.join(',')
+          : body.pieces || '',
       },
     })
 
     await db.auditLog.create({
       data: {
-        userId: body.userId || null,
-        userName: body.userName || 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'CREATE_SINISTRE',
         entity: 'sinistre',
         entityId: sinistre.id,

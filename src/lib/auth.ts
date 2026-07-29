@@ -2,6 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { api } from '@/lib/api'
 
 export type Role =
   | 'admin'
@@ -15,14 +16,8 @@ export interface User {
   name: string
   email: string
   role: Role
-  company?: string // Pour les correspondants
+  company?: string
   avatar: string
-}
-
-interface DemoAccount {
-  email: string
-  password: string
-  user: Omit<User, 'id'> & { id: string }
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -46,96 +41,114 @@ export const ROLE_DESCRIPTIONS: Record<Role, string> = {
     'Accès restreint au catalogue de votre compagnie',
 }
 
-export const DEMO_ACCOUNTS: DemoAccount[] = [
-  {
-    email: 'admin@aam.ml',
-    password: 'admin',
-    user: {
-      id: 'u-admin',
-      name: 'Mohamed Traoré',
-      email: 'admin@aam.ml',
-      role: 'admin',
-      avatar: 'MT',
-    },
-  },
-  {
-    email: 'agent@aam.ml',
-    password: 'agent',
-    user: {
-      id: 'u-agent',
-      name: 'Aïssata Diallo',
-      email: 'agent@aam.ml',
-      role: 'agent',
-      avatar: 'AD',
-    },
-  },
-  {
-    email: 'client@aam.ml',
-    password: 'client',
-    user: {
-      id: 'u-client',
-      name: 'Ibrahim Coulibaly',
-      email: 'client@aam.ml',
-      role: 'client',
-      avatar: 'IC',
-    },
-  },
-  {
-    email: 'sinistres@aam.ml',
-    password: 'gest',
-    user: {
-      id: 'u-gest',
-      name: 'Fatoumata Koné',
-      email: 'sinistres@aam.ml',
-      role: 'gestionnaire',
-      avatar: 'FK',
-    },
-  },
-  {
-    email: 'partenaire@nsia.ml',
-    password: 'part',
-    user: {
-      id: 'u-part',
-      name: 'Seydou Ba',
-      email: 'partenaire@nsia.ml',
-      role: 'correspondant',
-      company: 'NSIA Assurances',
-      avatar: 'SB',
-    },
-  },
-]
+function mapUser(u: {
+  id: string
+  name: string
+  email: string
+  role: string
+  avatar?: string | null
+  company?: { id?: string; name?: string; nom?: string } | null
+}): User {
+  return {
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    role: u.role as Role,
+    avatar: u.avatar || u.name?.slice(0, 2)?.toUpperCase() || '??',
+    company: u.company?.name || u.company?.nom,
+  }
+}
 
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
+  isHydrated: boolean
   error: string | null
-  login: (email: string, password: string) => boolean
-  logout: () => void
+  isLoading: boolean
+  login: (email: string, password: string) => Promise<boolean>
+  logout: () => Promise<void>
+  hydrate: () => Promise<void>
   clearError: () => void
 }
 
 export const useAuth = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
+      isHydrated: false,
       error: null,
-      login: (email: string, password: string) => {
-        const account = DEMO_ACCOUNTS.find(
-          (a) =>
-            a.email.toLowerCase() === email.toLowerCase() &&
-            a.password === password
-        )
-        if (account) {
-          set({ user: account.user, isAuthenticated: true, error: null })
+      isLoading: false,
+      login: async (email: string, password: string) => {
+        set({ isLoading: true, error: null })
+        try {
+          const res = await api.login(email, password)
+          set({
+            user: mapUser(res.user),
+            isAuthenticated: true,
+            isHydrated: true,
+            error: null,
+            isLoading: false,
+          })
           return true
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Identifiants incorrects. Vérifiez votre email et mot de passe.'
+          set({
+            error: message,
+            isAuthenticated: false,
+            user: null,
+            isLoading: false,
+            isHydrated: true,
+          })
+          return false
         }
-        set({ error: 'Identifiants incorrects. Vérifiez votre email et mot de passe.' })
-        return false
       },
-      logout: () => set({ user: null, isAuthenticated: false, error: null }),
+      logout: async () => {
+        try {
+          await api.logout()
+        } catch {
+          // ignore network errors on logout
+        }
+        set({
+          user: null,
+          isAuthenticated: false,
+          error: null,
+          isLoading: false,
+          isHydrated: true,
+        })
+      },
+      hydrate: async () => {
+        if (get().isLoading) return
+        set({ isLoading: true })
+        try {
+          const res = await api.me()
+          set({
+            user: mapUser(res.user),
+            isAuthenticated: true,
+            isHydrated: true,
+            isLoading: false,
+            error: null,
+          })
+        } catch {
+          set({
+            user: null,
+            isAuthenticated: false,
+            isHydrated: true,
+            isLoading: false,
+          })
+        }
+      },
       clearError: () => set({ error: null }),
     }),
-    { name: 'aam-auth' }
+    {
+      name: 'aam-auth',
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+    }
   )
 )

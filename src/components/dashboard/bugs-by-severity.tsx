@@ -11,28 +11,50 @@ const BRANCH_COLORS: Record<string, string> = {
   Vie: 'bg-rose-500',
 }
 
+const STATUT_COLORS: Record<string, string> = {
+  Déclaré: 'bg-blue-500',
+  'En instruction': 'bg-amber-500',
+  Traité: 'bg-emerald-500',
+  Validé: 'bg-violet-500',
+  Rejeté: 'bg-rose-500',
+}
+
 export function BugsBySeverity() {
   const { data: stats } = useStats()
 
-  const raw = stats?.breakdowns?.contratsByBranche || []
-  const branches = raw.map((b) => ({
-    label: b.branche,
-    count: b._count,
-    color: BRANCH_COLORS[b.branche] || 'bg-slate-400',
-  }))
-  const maxCount = Math.max(...branches.map((s) => s.count), 1)
+  const byBranche = stats?.breakdowns?.sinistresByBranche || []
+  const byStatut = stats?.breakdowns?.sinistresByStatut || []
+  const useBranche = byBranche.length > 0
+
+  const items = useBranche
+    ? byBranche.map((b) => ({
+        label: b.branche,
+        count: b._count,
+        color: BRANCH_COLORS[b.branche] || 'bg-slate-400',
+      }))
+    : byStatut.map((s) => ({
+        label: s.statut,
+        count: s._count,
+        color: STATUT_COLORS[s.statut] || 'bg-slate-400',
+      }))
+
+  const maxCount = Math.max(...items.map((s) => s.count), 1)
+  const title = useBranche ? 'Sinistres par Branche' : 'Sinistres par Statut'
+  const subtitle = useBranche
+    ? "Répartition par branche d'assurance"
+    : 'Répartition par statut de traitement'
 
   return (
     <ChartCard
-      title="Sinistres par Branche"
-      subtitle="Répartition par branche d'assurance"
+      title={title}
+      subtitle={subtitle}
       className="lg:col-span-1"
       bodyClassName="flex flex-col gap-2.5 pt-1"
     >
-      {branches.length === 0 ? (
+      {items.length === 0 ? (
         <div className="py-6 text-center text-xs text-slate-400">Aucune donnée</div>
       ) : (
-        branches.map((s) => (
+        items.map((s) => (
           <div key={s.label} className="flex items-center gap-3">
             <div className="flex w-20 shrink-0 items-center gap-1.5">
               <span className={`h-2 w-2 rounded-full ${s.color}`} />

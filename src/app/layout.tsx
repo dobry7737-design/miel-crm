@@ -22,12 +22,11 @@ export const metadata: Metadata = {
   keywords: ["AAM", "assurance", "courtage", "comparateur", "Mali", "CIMA", "devis", "sinistres"],
   authors: [{ name: "AAM" }],
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo-AAM.png",
   },
   openGraph: {
     title: "AAM — Assistances Assurances Mali",
     description: "Assurance, simplifiée. Comparez les offres de 11 compagnies agréées CIMA.",
-    url: "https://chat.z.ai",
     siteName: "AAM",
     type: "website",
   },
@@ -54,9 +53,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
-          <SonnerToaster position="bottom-right" richColors closeButton />
+          <QueryProvider>
+            {children}
+            <Toaster />
+            <SonnerToaster position="bottom-right" richColors closeButton />
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

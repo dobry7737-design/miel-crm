@@ -16,7 +16,7 @@ datasource db {
 model User {
   id            String    @id @default(cuid())
   email         String    @unique
-  password      String // hashed password (demo: plain for now)
+  password      String // bcrypt hash
   name          String
   role          String    @default("client") // admin | agent | client | gestionnaire | correspondant
   telephone     String?
@@ -106,6 +106,7 @@ model Devis {
   agentId       String?
   agentName     String    @default("")
   dateCreation  String
+  caracteristiquesJson String @default("{}") // JSON: réponses formulaire wizard
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -220,4 +221,11 @@ model AuditLog {
   @@index([userId])
   @@index([entity])
   @@index([action])
+}
+
+// ============ PARAMÈTRES PLATEFORME ============
+
+model Setting {
+  key   String @id
+  value String @default("")
 }

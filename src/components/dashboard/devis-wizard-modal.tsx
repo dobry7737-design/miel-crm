@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -21,9 +21,14 @@ import {
   Loader2,
   PartyPopper,
   RotateCcw,
+  Building2,
+  AlertCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { api, formatFCFA, type ProduitDTO } from '@/lib/api'
+import { useAuth } from '@/lib/auth'
+import { useInvalidateDashboard } from '@/lib/hooks'
 
 interface DevisWizardModalProps {
   open: boolean
@@ -118,9 +123,37 @@ const GARANTIES_BY_BRANCH: Record<Branch, { id: string; label: string; obligatoi
 
 const DUREES = ['12 mois', '6 mois', '3 mois']
 
-const STEPS = ['Type d\'assurance', 'Caractéristiques', 'Choix des garanties', 'Durée du contrat']
+const STEPS = [
+  "Type d'assurance",
+  'Caractéristiques',
+  'Choix des garanties',
+  'Durée du contrat',
+  'Offres partenaires',
+]
+
+function parsePrime(produit: ProduitDTO): number {
+  if (produit.tarifs && typeof produit.tarifs.basePrime === 'number') {
+    return produit.tarifs.basePrime
+  }
+  try {
+    const tarifs = JSON.parse(produit.tarifsJson || '{}') as { basePrime?: number }
+    return tarifs.basePrime || 0
+  } catch {
+    return 0
+  }
+}
+
+function garantiesList(produit: ProduitDTO): string[] {
+  if (Array.isArray(produit.garanties)) return produit.garanties
+  if (typeof produit.garanties === 'string' && produit.garanties) {
+    return produit.garanties.split(',').map((s) => s.trim()).filter(Boolean)
+  }
+  return []
+}
 
 export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizardModalProps) {
+  const { user } = useAuth()
+  const invalidate = useInvalidateDashboard()
   const [step, setStep] = useState(0)
   const [data, setData] = useState<WizardData>({
     branche: null,
@@ -131,6 +164,10 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
   })
   const [submitting, setSubmitting] = useState(false)
   const [completed, setCompleted] = useState(false)
+  const [createdRef, setCreatedRef] = useState('')
+  const [produits, setProduits] = useState<ProduitDTO[]>([])
+  const [loadingProduits, setLoadingProduits] = useState(false)
+  const [selectedProduitId, setSelectedProduitId] = useState<string | null>(null)
 
   const reset = () => {
     setStep(0)
@@ -143,21 +180,79 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
     })
     setCompleted(false)
     setSubmitting(false)
+    setCreatedRef('')
+    setProduits([])
+    setSelectedProduitId(null)
+    setLoadingProduits(false)
   }
+
+  useEffect(() => {
+    if (step !== 4 || !data.branche) return
+    let cancelled = false
+    setLoadingProduits(true)
+    setSelectedProduitId(null)
+    api
+      .getProduits({ branche: data.branche, statut: 'Actif' })
+      .then(async (res) => {
+        if (cancelled) return
+        let list = res.data || []
+        try {
+          const params = await api.getParametres()
+          const wPrix = Number(params.scorePrix) || 40
+          const wGar = Number(params.scoreGaranties) || 35
+          const wNote = Number(params.scoreNote) || 15
+          const wDelai = Number(params.scoreDelai) || 10
+          const maxPrime = Math.max(...list.map(parsePrime), 1)
+          const maxGar = Math.max(...list.map((p) => garantiesList(p).length), 1)
+          list = [...list].sort((a, b) => {
+            const score = (p: ProduitDTO) => {
+              const prime = parsePrime(p)
+              const gCount = garantiesList(p).length
+              const rating = p.compagnie?.rating ?? 0
+              const delai = p.compagnie?.delaiTraitement ?? 72
+              const sPrix = (1 - prime / maxPrime) * wPrix
+              const sGar = (gCount / maxGar) * wGar
+              const sNote = (rating / 5) * wNote
+              const sDelai = (1 - Math.min(delai, 72) / 72) * wDelai
+              return sPrix + sGar + sNote + sDelai
+            }
+            return score(b) - score(a)
+          })
+        } catch {
+          // keep unsorted if settings unavailable
+        }
+        setProduits(list)
+        if (list.length === 1) setSelectedProduitId(list[0].id)
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setProduits([])
+          toast.error(e instanceof Error ? e.message : 'Impossible de charger les offres')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingProduits(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [step, data.branche])
 
   const handleClose = (v: boolean) => {
     if (!v) {
-      // Reset on close
       setTimeout(reset, 200)
     }
     onOpenChange(v)
   }
 
   const selectBranche = (b: Branch) => {
-    setData((d) => ({ ...d, branche: b, caracteristiques: {}, garanties: [] }))
-    // Add default obligatoire garanties
     const oblig = GARANTIES_BY_BRANCH[b].filter((g) => g.obligatoire).map((g) => g.id)
-    setData((d) => ({ ...d, garanties: oblig }))
+    setData((d) => ({
+      ...d,
+      branche: b,
+      caracteristiques: {},
+      garanties: oblig,
+    }))
   }
 
   const setCarac = (id: string, value: string) => {
@@ -171,11 +266,9 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
       let next = has
         ? d.garanties.filter((g) => g !== id)
         : [...d.garanties, id]
-      // If selecting a garanty that is a dependency, also add it
       if (!has && dependDe && !next.includes(dependDe)) {
         next = [...next, dependDe]
       }
-      // If removing a garanty, also remove dependents
       if (has) {
         const branch = d.branche as Branch
         const dependents = GARANTIES_BY_BRANCH[branch]
@@ -192,23 +285,60 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
     if (step === 1) {
       if (!data.branche) return false
       const caracs = CARACS_BY_BRANCH[data.branche]
-      return caracs.every((c) => c.required ? data.caracteristiques[c.id] : true)
+      return caracs.every((c) => (c.required ? data.caracteristiques[c.id] : true))
     }
     if (step === 2) return data.garanties.length > 0
     if (step === 3) return !!data.duree && !!data.dateDebut
+    if (step === 4) return !!selectedProduitId && produits.length > 0
     return false
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!data.branche || !selectedProduitId) return
+    const produit = produits.find((p) => p.id === selectedProduitId)
+    if (!produit) {
+      toast.error('Sélectionnez une offre partenaire')
+      return
+    }
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
+    try {
+      const prime = parsePrime(produit)
+      const garantLabels = garantiesList(produit)
+      const res = await api.createDevis({
+        clientId: user?.role === 'client' ? user.id : user?.id,
+        clientName: user?.name || '',
+        clientAvatar: user?.avatar || '',
+        branche: data.branche,
+        compagnieId: produit.compagnieId,
+        companyName: produit.compagnie?.nom || '',
+        produitNom: produit.nom,
+        prime,
+        garanties: garantLabels.length
+          ? garantLabels
+          : GARANTIES_BY_BRANCH[data.branche]
+              .filter((g) => data.garanties.includes(g.id))
+              .map((g) => g.label),
+        duree: data.duree,
+        dateDebut: data.dateDebut,
+        statut: 'Émis',
+        agentName:
+          user?.role === 'agent' || user?.role === 'admin' ? user.name : '',
+        caracteristiques: data.caracteristiques,
+        userId: user?.id,
+        userName: user?.name,
+      })
+      setCreatedRef(res.data.reference)
       setCompleted(true)
       onComplete?.(data)
-      toast.success('Devis transmis aux compagnies partenaires', {
-        description: `Branche ${data.branche} · ${data.garanties.length} garantie(s) · ${data.duree}.`,
+      invalidate()
+      toast.success('Devis créé avec succès', {
+        description: `${res.data.reference} · ${produit.compagnie?.nom} · ${formatFCFA(prime)}`,
       })
-    }, 800)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erreur lors de la création du devis')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -233,7 +363,8 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
             <div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">Devis transmis !</h3>
               <p className="mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
-                Votre demande a été envoyée à 11 compagnies partenaires agréées CIMA. Vous recevrez les offres par email sous 5 minutes.
+                Votre devis <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{createdRef || '—'}</span> a été enregistré
+                {data.branche ? ` pour la branche ${data.branche}` : ''}.
               </p>
             </div>
             <div className="rounded-xl bg-slate-50 p-4 text-left dark:bg-slate-800">
@@ -379,13 +510,15 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                 </div>
               )}
 
-              {step === 2 && data.branche && (
+              {step === 2 && data.branche && (() => {
+                const branche = data.branche as Branch
+                return (
                 <div className="space-y-3">
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    Sélectionnez les garanties souhaitées pour votre assurance {data.branche.toLowerCase()} :
+                    Sélectionnez les garanties souhaitées pour votre assurance {branche.toLowerCase()} :
                   </p>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {GARANTIES_BY_BRANCH[data.branche].map((g) => {
+                    {GARANTIES_BY_BRANCH[branche].map((g) => {
                       const checked = data.garanties.includes(g.id)
                       return (
                         <label
@@ -412,7 +545,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                             )}
                             {g.dependDe && (
                               <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                                Inclus &laquo; {GARANTIES_BY_BRANCH[data.branche].find((x) => x.id === g.dependDe)?.label} &raquo;
+                                Inclus &laquo; {GARANTIES_BY_BRANCH[branche].find((x) => x.id === g.dependDe)?.label} &raquo;
                               </p>
                             )}
                           </div>
@@ -421,7 +554,8 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                     })}
                   </div>
                 </div>
-              )}
+                )
+              })()}
 
               {step === 3 && (
                 <div className="space-y-4">
@@ -475,6 +609,82 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                   </div>
                 </div>
               )}
+
+              {step === 4 && (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Offres actives en base pour la branche{' '}
+                    <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      {data.branche}
+                    </span>{' '}
+                    — sélectionnez une compagnie partenaire :
+                  </p>
+                  {loadingProduits ? (
+                    <div className="flex items-center justify-center gap-2 py-10 text-sm text-slate-500">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                      Chargement des offres Prisma…
+                    </div>
+                  ) : produits.length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-8 text-center dark:border-amber-800 dark:bg-amber-950/40">
+                      <AlertCircle className="h-8 w-8 text-amber-600" />
+                      <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                        Aucun produit actif pour cette branche
+                      </p>
+                      <p className="max-w-sm text-xs text-amber-800/80 dark:text-amber-300/80">
+                        Ajoutez des produits en base (compagnies partenaires) avant de créer un devis.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {produits.map((p) => {
+                        const prime = parsePrime(p)
+                        const gars = garantiesList(p)
+                        const active = selectedProduitId === p.id
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setSelectedProduitId(p.id)}
+                            className={cn(
+                              'flex w-full items-start gap-3 rounded-xl border p-4 text-left transition-all',
+                              active
+                                ? 'border-blue-300 bg-blue-50 ring-2 ring-blue-100 dark:border-blue-700 dark:bg-blue-900/40 dark:ring-blue-900/40'
+                                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800'
+                            )}
+                          >
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                              <Building2 className="h-5 w-5" strokeWidth={2} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    {p.nom}
+                                  </p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {p.compagnie?.nom || 'Compagnie'}
+                                  </p>
+                                </div>
+                                <p className="shrink-0 text-sm font-bold text-blue-600 dark:text-blue-400">
+                                  {formatFCFA(prime)}
+                                </p>
+                              </div>
+                              {gars.length > 0 && (
+                                <p className="mt-2 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                                  {gars.join(' · ')}
+                                </p>
+                              )}
+                            </div>
+                            {active && (
+                              <Check className="mt-1 h-5 w-5 shrink-0 text-blue-500" strokeWidth={2.5} />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -495,13 +705,13 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                   onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
-                  Suivant
+                  {step === 3 ? 'Voir les offres' : 'Suivant'}
                   <ChevronRight className="ml-1 h-4 w-4" />
                 </Button>
               ) : (
                 <Button
                   size="sm"
-                  disabled={!canNext() || submitting}
+                  disabled={!canNext() || submitting || loadingProduits}
                   onClick={handleSubmit}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -511,7 +721,7 @@ export function DevisWizardModal({ open, onOpenChange, onComplete }: DevisWizard
                       Envoi...
                     </>
                   ) : (
-                    'Comparer les offres'
+                    'Créer le devis'
                   )}
                 </Button>
               )}

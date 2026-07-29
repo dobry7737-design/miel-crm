@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Eye,
   FileText,
   TrendingUp,
-  TrendingDown,
   CheckCircle2,
   AlertCircle,
   Loader2,
@@ -41,6 +40,8 @@ export function DevisPage() {
   const [brancheFilter, setBrancheFilter] = useState('')
   const [wizardOpen, setWizardOpen] = useState(false)
   const [viewDevis, setViewDevis] = useState<DevisDTO | null>(null)
+  const [busy, setBusy] = useState(false)
+  const queryClient = useQueryClient()
 
   // Fetch devis from API with filters
   const { data: resp, isLoading } = useQuery({
@@ -52,10 +53,10 @@ export function DevisPage() {
 
   // Compute stat cards dynamically
   const statCards = [
-    { label: 'Total devis', value: String(allDevis.length), icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
-    { label: 'Émis', value: String(allDevis.filter((d) => d.statut === 'Émis').length), icon: TrendingUp, trend: '+8%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-    { label: 'Transformés', value: String(allDevis.filter((d) => d.statut === 'Transformé').length), icon: CheckCircle2, trend: '+15%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-    { label: 'Taux conv.', value: allDevis.length > 0 ? `${Math.round((allDevis.filter((d) => d.statut === 'Transformé').length / allDevis.length) * 100)}%` : '0%', icon: TrendingDown, trend: '-2%', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+    { label: 'Total devis', value: String(allDevis.length), icon: FileText, hint: 'tous statuts', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+    { label: 'Émis', value: String(allDevis.filter((d) => d.statut === 'Émis').length), icon: TrendingUp, hint: 'en attente', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+    { label: 'Transformés', value: String(allDevis.filter((d) => d.statut === 'Transformé').length), icon: CheckCircle2, hint: 'convertis', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'Taux conv.', value: allDevis.length > 0 ? `${Math.round((allDevis.filter((d) => d.statut === 'Transformé').length / allDevis.length) * 100)}%` : '0%', icon: CheckCircle2, hint: 'conversion', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
   ]
 
   // Register primary action
@@ -146,10 +147,7 @@ export function DevisPage() {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
-                  {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {s.trend}
-                </span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{s.hint}</span>
               </div>
             </button>
           )
@@ -293,16 +291,60 @@ export function DevisPage() {
               </div>
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <Button variant="outline" size="sm" onClick={() => setViewDevis(null)}>Fermer</Button>
-                <Button
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => {
-                    toast.success('Devis transformé en contrat', { description: `Devis ${viewDevis.reference} converti en contrat actif.` })
-                    setViewDevis(null)
-                  }}
-                >
-                  Transformer en contrat
-                </Button>
+                {viewDevis.statut !== 'Transformé' && (
+                  <Button
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true)
+                      try {
+                        const addOneYear = (dateStr: string) => {
+                          const iso = /^\d{4}-\d{2}-\d{2}/.exec(dateStr)
+                          if (iso) {
+                            const d = new Date(dateStr)
+                            d.setFullYear(d.getFullYear() + 1)
+                            return d.toISOString().split('T')[0]
+                          }
+                          const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(dateStr)
+                          if (m) return `${m[1]}/${m[2]}/${Number(m[3]) + 1}`
+                          return dateStr
+                        }
+                        await api.createContrat({
+                          clientId: viewDevis.clientId,
+                          clientName: viewDevis.clientName,
+                          clientAvatar: viewDevis.clientAvatar,
+                          branche: viewDevis.branche,
+                          compagnieId: viewDevis.compagnieId,
+                          companyName: viewDevis.companyName,
+                          produit: viewDevis.produitNom,
+                          prime: viewDevis.prime,
+                          garanties: viewDevis.garanties,
+                          statut: 'Actif',
+                          dateDebut: viewDevis.dateDebut,
+                          dateFin: addOneYear(viewDevis.dateDebut),
+                          prochainRenouvellement: addOneYear(viewDevis.dateDebut),
+                          agentName: viewDevis.agentName,
+                          devisId: viewDevis.id,
+                        })
+                        await api.updateDevis(viewDevis.id, { statut: 'Transformé' })
+                        await queryClient.invalidateQueries({ queryKey: ['devis'] })
+                        await queryClient.invalidateQueries({ queryKey: ['contrats'] })
+                        await queryClient.invalidateQueries({ queryKey: ['stats'] })
+                        toast.success('Devis transformé en contrat', {
+                          description: `Devis ${viewDevis.reference} converti en contrat actif.`,
+                        })
+                        setViewDevis(null)
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : 'Erreur lors de la transformation')
+                      } finally {
+                        setBusy(false)
+                      }
+                    }}
+                  >
+                    Transformer en contrat
+                  </Button>
+                )}
               </div>
             </div>
           )}

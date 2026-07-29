@@ -1,13 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Eye,
   ShieldCheck,
-  TrendingUp,
-  TrendingDown,
   CalendarClock,
-  Download,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react'
@@ -23,28 +21,34 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { api, formatFCFA, type ContratDTO } from '@/lib/api'
+import { api, formatFCFA, parseCsvList, type ContratDTO } from '@/lib/api'
 import { usePagination } from '@/lib/use-pagination'
+import { useStats } from '@/lib/hooks'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-
-const STAT_CARDS = [
-  { label: 'Contrats actifs', value: '856', icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-  { label: "Souscrits ce mois", value: '127', icon: TrendingUp, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-  { label: 'En attente', value: '23', icon: AlertCircle, trend: '-3%', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
-  { label: 'Renouvellements (30j)', value: '48', icon: CalendarClock, trend: '+5%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
-]
 
 export function ContratsPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [brancheFilter, setBrancheFilter] = useState('')
   const [viewContrat, setViewContrat] = useState<ContratDTO | null>(null)
+  const [busy, setBusy] = useState(false)
+  const queryClient = useQueryClient()
+  const { data: stats } = useStats()
 
   const { data: resp, isLoading } = useQuery({
     queryKey: ['contrats', { statut: statusFilter, branche: brancheFilter, search }],
     queryFn: () => api.getContrats({ statut: statusFilter || undefined, branche: brancheFilter || undefined, search: search || undefined }),
   })
   const filtered = resp?.data || []
+  const t = stats?.totals
+
+  const statCards = [
+    { label: 'Contrats actifs', value: String(t?.activeContrats ?? filtered.filter((c) => c.statut === 'Actif').length), icon: ShieldCheck, hint: 'portefeuille', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'Total contrats', value: String(t?.contrats ?? filtered.length), icon: CheckCircle2, hint: 'tous statuts', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+    { label: 'En attente', value: String(t?.pendingContrats ?? filtered.filter((c) => c.statut === 'En attente').length), icon: AlertCircle, hint: 'à finaliser', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+    { label: 'Renouvellements (30j)', value: String(t?.renewalsSoon ?? 0), icon: CalendarClock, hint: 'échéance proche', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+  ]
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, statusFilter, brancheFilter])
@@ -91,7 +95,7 @@ export function ContratsPage() {
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((s) => {
+        {statCards.map((s) => {
           const Icon = s.icon
           return (
             <div
@@ -106,10 +110,7 @@ export function ContratsPage() {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
-                  {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {s.trend}
-                </span>
+                <span className="text-xs text-slate-400">{s.hint}</span>
               </div>
             </div>
           )
@@ -153,9 +154,9 @@ export function ContratsPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-semibold text-white">
-                          {c.clientNameAvatar}
+                          {c.clientAvatar}
                         </span>
-                        <span className="text-slate-800 dark:text-slate-200">{c.clientNameName}</span>
+                        <span className="text-slate-800 dark:text-slate-200">{c.clientName}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3"><BranchBadge branch={c.branche} /></td>
@@ -196,17 +197,17 @@ export function ContratsPage() {
               Contrat {viewContrat?.reference}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              {viewContrat?.produit} · {viewContrat?.compagnie}
+              {viewContrat?.produit} · {viewContrat?.companyName}
             </DialogDescription>
           </DialogHeader>
 
           {viewContrat && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <InfoField label="Client" value={viewContrat.client} />
+                <InfoField label="Client" value={viewContrat.clientName} />
                 <InfoField label="Branche" value={viewContrat.branche} />
-                <InfoField label="Compagnie" value={viewContrat.compagnie} />
-                <InfoField label="Agent" value={viewContrat.agent} />
+                <InfoField label="Compagnie" value={viewContrat.companyName} />
+                <InfoField label="Agent" value={viewContrat.agentName} />
                 <InfoField label="Date de début" value={viewContrat.dateDebut} />
                 <InfoField label="Date de fin" value={viewContrat.dateFin} />
                 <InfoField label="Prochain renouvellement" value={viewContrat.prochainRenouvellement} />
@@ -216,7 +217,7 @@ export function ContratsPage() {
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Garanties incluses</p>
                 <div className="flex flex-wrap gap-2">
-                  {viewContrat.garanties.map((g) => (
+                  {parseCsvList(viewContrat.garanties).map((g) => (
                     <span key={g} className="flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                       <CheckCircle2 className="h-3 w-3" />
                       {g}
@@ -234,26 +235,39 @@ export function ContratsPage() {
               </div>
 
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    toast.success('Attestation PDF générée', {
-                      description: `Attestation de ${viewContrat.reference} téléchargée.`,
-                    })
-                  }
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
+                <Button variant="outline" size="sm" disabled title="Génération PDF non disponible">
                   Attestation PDF
                 </Button>
                 <Button
                   size="sm"
                   className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() =>
-                    toast.success('Renouvellement initié', {
-                      description: `Renouvellement de ${viewContrat.reference} en cours.`,
-                    })
-                  }
+                  disabled={busy || viewContrat.statut !== 'Actif'}
+                  onClick={async () => {
+                    if (!viewContrat) return
+                    setBusy(true)
+                    try {
+                      const nextYear = (() => {
+                        const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(viewContrat.dateFin)
+                        if (!m) return viewContrat.dateFin
+                        return `${m[1]}/${m[2]}/${Number(m[3]) + 1}`
+                      })()
+                      await api.updateContrat(viewContrat.id, {
+                        dateFin: nextYear,
+                        prochainRenouvellement: nextYear,
+                        statut: 'Actif',
+                      })
+                      await queryClient.invalidateQueries({ queryKey: ['contrats'] })
+                      await queryClient.invalidateQueries({ queryKey: ['stats'] })
+                      toast.success('Renouvellement enregistré', {
+                        description: `Contrat ${viewContrat.reference} prolongé jusqu'au ${nextYear}.`,
+                      })
+                      setViewContrat(null)
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : 'Erreur renouvellement')
+                    } finally {
+                      setBusy(false)
+                    }
+                  }}
                 >
                   Renouveler
                 </Button>

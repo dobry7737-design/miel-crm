@@ -1,17 +1,19 @@
 'use client'
 
 import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   Wallet,
-  TrendingUp,
-  TrendingDown,
   CheckCircle2,
   AlertCircle,
   Eye,
-  Download,
   Smartphone,
   CreditCard,
   Banknote,
+  TrendingDown,
+  Download,
+  Plus,
+  Loader2,
 } from 'lucide-react'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { StatutBadge } from '@/components/dashboard/statut-badge'
@@ -27,16 +29,12 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { api, formatFCFA, type PaiementDTO } from '@/lib/api'
+import { useStats, useInvalidateDashboard } from '@/lib/hooks'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { useAuth } from '@/lib/auth'
 
-const STAT_CARDS = [
-  { label: 'Volume total (30j)', value: '142,5 M', unit: 'FCFA', icon: Wallet, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-  { label: 'Réussis', value: '1 248', icon: CheckCircle2, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-  { label: 'En attente', value: '23', icon: AlertCircle, trend: '-3', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
-  { label: 'Échoués', value: '7', icon: TrendingDown, trend: '-5', trendUp: true, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/40' },
-]
-
-const MOYEN_ICON: Record<Paiement['moyen'], { icon: typeof Smartphone; color: string }> = {
+const MOYEN_ICON: Record<string, { icon: typeof Smartphone; color: string }> = {
   'Orange Money': { icon: Smartphone, color: 'text-orange-500' },
   'Wave': { icon: Smartphone, color: 'text-blue-500' },
   'Moov Money': { icon: Smartphone, color: 'text-emerald-500' },
@@ -49,12 +47,30 @@ export function PaiementsPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [moyenFilter, setMoyenFilter] = useState('')
   const [view, setView] = useState<PaiementDTO | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const queryClient = useQueryClient()
+  const { data: stats } = useStats()
+  const { user } = useAuth()
+  const canCreate = user?.role === 'admin' || user?.role === 'agent'
 
   const { data: resp, isLoading } = useQuery({
     queryKey: ['paiements', { statut: statusFilter, moyen: moyenFilter, search }],
     queryFn: () => api.getPaiements({ statut: statusFilter || undefined, moyen: moyenFilter || undefined, search: search || undefined }),
   })
   const filtered = resp?.data || []
+  const byStatut = stats?.breakdowns?.paiementsByStatut || []
+  const countStatut = (s: string) => byStatut.find((x) => x.statut === s)?._count ?? filtered.filter((p) => p.statut === s).length
+  const volume =
+    stats?.financials?.totalPayments ??
+    filtered.filter((p) => p.statut === 'Réussi').reduce((a, p) => a + p.montant, 0)
+
+  const statCards = [
+    { label: 'Volume réussi', value: `${(volume / 1000000).toFixed(1)} M`, unit: 'FCFA', icon: Wallet, hint: 'cumul', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+    { label: 'Réussis', value: String(countStatut('Réussi')), icon: CheckCircle2, hint: 'transactions', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'En attente', value: String(countStatut('En attente')), icon: AlertCircle, hint: 'à encaisser', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+    { label: 'Échoués', value: String(countStatut('Échoué')), icon: TrendingDown, hint: 'à relancer', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/40' },
+  ]
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, statusFilter, moyenFilter])
@@ -95,13 +111,19 @@ export function PaiementsPage() {
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher un paiement, une transaction..."
+        primaryActionLabel={canCreate ? 'Enregistrer un paiement' : undefined}
+        onPrimaryAction={canCreate ? () => setCreateOpen(true) : undefined}
         secondaryActionLabel="Exporter"
-        onSecondaryAction={() => {}}
+        onSecondaryAction={() =>
+          toast.info('Export indisponible', {
+            description: "L'export Excel des paiements n'est pas encore activé.",
+          })
+        }
         filters={filters}
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((s) => {
+        {statCards.map((s) => {
           const Icon = s.icon
           return (
             <div
@@ -119,10 +141,7 @@ export function PaiementsPage() {
                   {s.value}
                   {s.unit && <span className="ml-1 text-xs text-slate-400">{s.unit}</span>}
                 </span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
-                  {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {s.trend}
-                </span>
+                <span className="text-xs text-slate-400">{s.hint}</span>
               </div>
             </div>
           )
@@ -170,9 +189,9 @@ export function PaiementsPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2">
                           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-violet-500 text-[10px] font-semibold text-white">
-                            {p.clientNameAvatar}
+                            {p.clientAvatar || p.clientName?.slice(0, 2)?.toUpperCase() || '??'}
                           </span>
-                          <span className="text-slate-800 dark:text-slate-200">{p.clientNameName}</span>
+                          <span className="text-slate-800 dark:text-slate-200">{p.clientName}</span>
                         </div>
                       </td>
                       <td className="px-5 py-3">
@@ -262,11 +281,8 @@ export function PaiementsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    toast.success('Reçu PDF généré', {
-                      description: `Reçu de ${view.reference} téléchargé.`,
-                    })
-                  }
+                  disabled
+                  title="Génération PDF non disponible"
                 >
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   Reçu PDF
@@ -275,11 +291,22 @@ export function PaiementsPage() {
                   <Button
                     size="sm"
                     className="bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => {
-                      toast.success('Paiement marqué comme reçu', {
-                        description: `Paiement ${view.reference} réconcilié manuellement.`,
-                      })
-                      setView(null)
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true)
+                      try {
+                        await api.updatePaiement(view.id, { statut: 'Réussi' })
+                        await queryClient.invalidateQueries({ queryKey: ['paiements'] })
+                        await queryClient.invalidateQueries({ queryKey: ['stats'] })
+                        toast.success('Paiement marqué comme reçu', {
+                          description: `Paiement ${view.reference} réconcilié manuellement.`,
+                        })
+                        setView(null)
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : 'Erreur lors de la mise à jour')
+                      } finally {
+                        setBusy(false)
+                      }
                     }}
                   >
                     Marquer comme reçu
@@ -290,7 +317,163 @@ export function PaiementsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <CreatePaiementModal open={createOpen} onOpenChange={setCreateOpen} />
     </div>
+  )
+}
+
+function CreatePaiementModal({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (v: boolean) => void
+}) {
+  const invalidate = useInvalidateDashboard()
+  const [contratRef, setContratRef] = useState('')
+  const [moyen, setMoyen] = useState('Orange Money')
+  const [montant, setMontant] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const { data: contratsResp } = useQuery({
+    queryKey: ['contrats', 'paiement-create'],
+    queryFn: () => api.getContrats(),
+    enabled: open,
+  })
+  const contrats = (contratsResp?.data || []).filter((c) => c.statut === 'Actif')
+
+  const selected = contrats.find((c) => c.reference === contratRef)
+
+  const reset = () => {
+    setContratRef('')
+    setMoyen('Orange Money')
+    setMontant('')
+    setSubmitting(false)
+  }
+
+  const handleClose = (v: boolean) => {
+    if (!v) setTimeout(reset, 200)
+    onOpenChange(v)
+  }
+
+  const handleSubmit = async () => {
+    if (!selected) {
+      toast.error('Sélectionnez un contrat')
+      return
+    }
+    const amount = Number(montant) || selected.prime
+    if (!amount || amount <= 0) {
+      toast.error('Montant invalide')
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await api.createPaiement({
+        clientId: selected.clientId,
+        clientName: selected.clientName,
+        clientAvatar: selected.clientAvatar,
+        contratRef: selected.reference,
+        compagnieId: selected.compagnieId,
+        companyName: selected.companyName,
+        montant: amount,
+        commission: Math.round(amount * 0.1),
+        moyen,
+        statut: 'En attente',
+        date: new Date().toLocaleDateString('fr-FR'),
+      })
+      invalidate()
+      toast.success('Paiement enregistré', {
+        description: `${res.data.reference} · ${formatFCFA(amount)}`,
+      })
+      handleClose(false)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erreur lors de la création')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Plus className="h-4 w-4 text-blue-600" />
+            Enregistrer un paiement
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Liez un paiement à un contrat actif en base Prisma.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
+              Contrat <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={contratRef}
+              onChange={(e) => {
+                setContratRef(e.target.value)
+                const c = contrats.find((x) => x.reference === e.target.value)
+                if (c) setMontant(String(c.prime))
+              }}
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            >
+              <option value="">Sélectionner…</option>
+              {contrats.map((c) => (
+                <option key={c.id} value={c.reference}>
+                  {c.reference} · {c.clientName} · {formatFCFA(c.prime)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
+              Montant (FCFA)
+            </label>
+            <input
+              type="number"
+              value={montant}
+              onChange={(e) => setMontant(e.target.value)}
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
+              Moyen
+            </label>
+            <select
+              value={moyen}
+              onChange={(e) => setMoyen(e.target.value)}
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            >
+              {Object.keys(MOYEN_ICON).map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" size="sm" onClick={() => handleClose(false)}>
+            Annuler
+          </Button>
+          <Button
+            size="sm"
+            disabled={!contratRef || submitting}
+            onClick={handleSubmit}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            {submitting ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : null}
+            Enregistrer
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

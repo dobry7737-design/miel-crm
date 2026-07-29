@@ -1,7 +1,7 @@
 'use client'
 
 import { ChartCard } from './chart-card'
-import { useAllDevis } from '@/lib/hooks'
+import { useStats } from '@/lib/hooks'
 
 const AVATAR_COLORS = [
   'bg-purple-100 text-purple-600',
@@ -12,38 +12,29 @@ const AVATAR_COLORS = [
 ]
 
 function initialsFor(name: string): string {
-  return name.split(' ').slice(0, 2).map((s) => s[0]?.toUpperCase() || '').join('')
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase() || '')
+    .join('')
 }
 
 export function BugsPerDeveloper() {
-  const { data: resp } = useAllDevis()
-
-  // Group devis by agentName
-  const devis = resp?.data || []
-  const agentMap: Record<string, number> = {}
-  for (const d of devis) {
-    if (d.agentName) {
-      agentMap[d.agentName] = (agentMap[d.agentName] || 0) + 1
-    }
-  }
-  const max = Math.max(...Object.values(agentMap), 1)
-  const agents = Object.entries(agentMap)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([name, count], i) => ({
-      name,
-      initials: initialsFor(name),
-      avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
-      total: count,
-      max,
-    }))
+  const { data: stats } = useStats()
+  const agentsRaw = stats?.breakdowns?.devisByAgent || []
+  const max = Math.max(...agentsRaw.map((a) => a.count), 1)
+  const agents = agentsRaw.slice(0, 5).map((a, i) => ({
+    name: a.name,
+    initials: initialsFor(a.name),
+    avatarColor: AVATAR_COLORS[i % AVATAR_COLORS.length],
+    total: a.count,
+    max,
+  }))
 
   return (
     <ChartCard
       title="Devis par Agent"
-      subtitle="Répartition des devis par agent commercial"
-      dropdownLabel="Tous agents"
-      dropdownItems={['Tous agents', 'Top 5']}
+      subtitle="Répartition filtrée des devis par agent"
       className="lg:col-span-1"
       bodyClassName="flex flex-col gap-3 pt-1"
     >

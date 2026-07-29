@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import {
+  clientScopeWhere,
+  companyScopeWhere,
+  isAuthError,
+  mergeWhere,
+  requireRole,
+} from '@/lib/api-auth'
 
-// GET /api/devis — list all devis with optional filters
+const DEVIS_ROLES = ['admin', 'agent', 'client', 'correspondant'] as const
+
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireRole(req, [...DEVIS_ROLES])
+    if (isAuthError(auth)) return auth
+
     const { searchParams } = new URL(req.url)
     const statut = searchParams.get('statut')
     const branche = searchParams.get('branche')
@@ -11,7 +22,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
     if (statut) where.statut = statut
     if (branche) where.branche = branche
     if (search) {
@@ -22,9 +33,15 @@ export async function GET(req: NextRequest) {
       ]
     }
 
+    const scoped = mergeWhere(
+      where,
+      clientScopeWhere(auth),
+      companyScopeWhere(auth)
+    )
+
     const [devis, total] = await Promise.all([
       db.devis.findMany({
-        where,
+        where: scoped,
         include: {
           compagnie: { select: { id: true, nom: true } },
           client: { select: { id: true, name: true } },
@@ -33,7 +50,7 @@ export async function GET(req: NextRequest) {
         take: limit,
         skip: offset,
       }),
-      db.devis.count({ where }),
+      db.devis.count({ where: scoped }),
     ])
 
     return NextResponse.json({
@@ -48,19 +65,22 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/devis — create a new devis
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    const auth = await requireRole(req, ['admin', 'agent', 'client'])
+    if (isAuthError(auth)) return auth
 
-    // Generate reference
+    const body = await req.json()
     const count = await db.devis.count()
-    const reference = `DEV-2026-${String(count + 488).padStart(4, '0')}`
+    const reference = `DEV-2026-${String(count + 1).padStart(4, '0')}`
+
+    const clientId =
+      auth.role === 'client' ? auth.userId : body.clientId || null
 
     const devis = await db.devis.create({
       data: {
         reference,
-        clientId: body.clientId || null,
+        clientId,
         clientName: body.clientName || '',
         clientAvatar: body.clientAvatar || '',
         branche: body.branche,
@@ -68,20 +88,26 @@ export async function POST(req: NextRequest) {
         companyName: body.companyName || '',
         produitNom: body.produitNom || '',
         prime: body.prime || 0,
-        garanties: Array.isArray(body.garanties) ? body.garanties.join(',') : body.garanties || '',
+        garanties: Array.isArray(body.garanties)
+          ? body.garanties.join(',')
+          : body.garanties || '',
         duree: body.duree || '12 mois',
         dateDebut: body.dateDebut || new Date().toISOString().split('T')[0],
         statut: body.statut || 'Émis',
-        agentName: body.agentName || '',
+        agentName: body.agentName || (auth.role === 'agent' ? auth.email : ''),
+        agentId: auth.role === 'agent' ? auth.userId : body.agentId || null,
         dateCreation: new Date().toLocaleDateString('fr-FR'),
+        caracteristiquesJson:
+          typeof body.caracteristiquesJson === 'string'
+            ? body.caracteristiquesJson
+            : JSON.stringify(body.caracteristiques || body.caracteristiquesJson || {}),
       },
     })
 
-    // Audit log
     await db.auditLog.create({
       data: {
-        userId: body.userId || null,
-        userName: body.userName || 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'CREATE_DEVIS',
         entity: 'devis',
         entityId: devis.id,

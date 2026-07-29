@@ -3,12 +3,22 @@
 export const formatFCFA = (n: number) =>
   new Intl.NumberFormat('fr-FR').format(n) + ' FCFA'
 
+/** Prisma stocke branches/garanties/pièces en CSV ; l'UI attend un tableau. */
+export function parseCsvList(value: string | string[] | null | undefined): string[] {
+  if (Array.isArray(value)) return value.filter(Boolean)
+  if (!value || typeof value !== 'string') return []
+  return value
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+}
+
 // ============ API FETCH FUNCTIONS ============
 
 const API_BASE = '/api'
 
 async function fetchJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url)
+  const res = await fetch(url, { credentials: 'include' })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }))
     throw new Error(err.error || `HTTP ${res.status}`)
@@ -16,11 +26,12 @@ async function fetchJSON<T>(url: string): Promise<T> {
   return res.json()
 }
 
-async function postJSON<T>(url: string, body: any): Promise<T> {
+async function postJSON<T>(url: string, body?: any): Promise<T> {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    credentials: 'include',
+    body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }))
@@ -33,6 +44,21 @@ async function patchJSON<T>(url: string, body: any): Promise<T> {
   const res = await fetch(url, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Request failed' }))
+    throw new Error(err.error || `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+async function putJSON<T>(url: string, body: any): Promise<T> {
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(body),
   })
   if (!res.ok) {
@@ -43,7 +69,7 @@ async function patchJSON<T>(url: string, body: any): Promise<T> {
 }
 
 async function deleteJSON<T>(url: string): Promise<T> {
-  const res = await fetch(url, { method: 'DELETE' })
+  const res = await fetch(url, { method: 'DELETE', credentials: 'include' })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: 'Request failed' }))
     throw new Error(err.error || `HTTP ${res.status}`)
@@ -139,7 +165,7 @@ export interface CompagnieDTO {
   email: string
   telephone: string
   datePartenariat: string
-  branches: string
+  branches: string[] | string
   createdAt: string
   updatedAt: string
   _count?: { devis: number; contrats: number; sinistres: number }
@@ -181,30 +207,97 @@ export interface UserDTO {
   updatedAt: string
 }
 
+export interface ProduitDTO {
+  id: string
+  nom: string
+  branche: string
+  compagnieId: string
+  tarifsJson: string
+  tarifs?: Record<string, unknown>
+  garanties: string[] | string
+  statut: string
+  createdAt: string
+  updatedAt: string
+  compagnie?: {
+    id: string
+    nom: string
+    initials?: string
+    statut?: string
+    rating?: number
+    delaiTraitement?: number
+  } | null
+}
+
 export interface StatsDTO {
+  filters?: {
+    branche: string
+    days: number | 'all'
+  }
   totals: {
     devis: number
     contrats: number
     activeContrats: number
+    pendingContrats: number
+    renewalsSoon: number
     sinistres: number
     pendingSinistres: number
+    treatedSinistres: number
+    alertOver72: number
+    avgDelaiH: number
     paiements: number
     compagnies: number
     activeCompagnies: number
+    pendingCompagnies: number
+    avgCompagnieDelai: number
     users: number
     activeUsers: number
+    suspendedUsers: number
+    agentUsers: number
+    produits: number
   }
   financials: {
     totalPayments: number
     totalCommissions: number
     activeContratsPrime: number
   }
+  scores: {
+    conversionRate: number
+    respectDelai72h: number
+    sinistralite: number
+  }
   breakdowns: {
     devisByStatut: { _count: number; statut: string }[]
     contratsByBranche: { _count: number; branche: string }[]
     sinistresByStatut: { _count: number; statut: string }[]
+    sinistresByBranche: { _count: number; branche: string }[]
     paiementsByMoyen: { _count: number; moyen: string }[]
+    paiementsByStatut: { _count: number; statut: string; montant: number }[]
+    avgDelaiByBranche?: { branche: string; hours: number }[]
+    devisByAgent?: { name: string; count: number }[]
   }
+  timeline?: {
+    date: string
+    devis: number
+    souscriptions: number
+    contrats: number
+  }[]
+}
+
+export type StatsQueryParams = {
+  branche?: string
+  days?: number | 'all' | string
+}
+
+export interface AuditLogDTO {
+  id: string
+  userId: string | null
+  userName: string
+  action: string
+  entity: string
+  entityId: string | null
+  details: string
+  ipAddress: string | null
+  createdAt: string
 }
 
 // ============ API FUNCTIONS ============
@@ -281,12 +374,52 @@ export const api = {
   updateUser: (id: string, body: any) => patchJSON<{ data: UserDTO }>(`${API_BASE}/utilisateurs/${id}`, body),
   deleteUser: (id: string) => deleteJSON(`${API_BASE}/utilisateurs/${id}`),
 
+  // Produits
+  getProduits: (params?: {
+    branche?: string
+    statut?: string
+    compagnieId?: string
+  }) => {
+    const qs = new URLSearchParams()
+    if (params?.branche) qs.set('branche', params.branche)
+    if (params?.statut) qs.set('statut', params.statut)
+    if (params?.compagnieId) qs.set('compagnieId', params.compagnieId)
+    return fetchJSON<{ data: ProduitDTO[] }>(`${API_BASE}/produits?${qs}`)
+  },
+  createProduit: (body: any) =>
+    postJSON<{ data: ProduitDTO }>(`${API_BASE}/produits`, body),
+  updateProduit: (id: string, body: any) =>
+    patchJSON<{ data: ProduitDTO }>(`${API_BASE}/produits/${id}`, body),
+  deleteProduit: (id: string) => deleteJSON(`${API_BASE}/produits/${id}`),
+
   // Stats
-  getStats: () => fetchJSON<StatsDTO>(`${API_BASE}/stats`),
+  getStats: (params?: StatsQueryParams) => {
+    const qs = new URLSearchParams()
+    if (params?.branche && params.branche !== 'all') {
+      qs.set('branche', params.branche)
+    }
+    if (params?.days != null) qs.set('days', String(params.days))
+    const q = qs.toString()
+    return fetchJSON<StatsDTO>(`${API_BASE}/stats${q ? `?${q}` : ''}`)
+  },
+
+  // Audit
+  getAudit: (limit?: number) => {
+    const qs = new URLSearchParams()
+    if (limit != null) qs.set('limit', String(limit))
+    return fetchJSON<{ data: AuditLogDTO[] }>(`${API_BASE}/audit?${qs}`)
+  },
+
+  // Paramètres
+  getParametres: () => fetchJSON<Record<string, string>>(`${API_BASE}/parametres`),
+  updateParametres: (body: Record<string, string>) =>
+    putJSON<Record<string, string>>(`${API_BASE}/parametres`, body),
 
   // Auth
   login: (email: string, password: string) =>
-    postJSON<{ user: any; token: string }>(`${API_BASE}/auth/login`, { email, password }),
+    postJSON<{ user: any }>(`${API_BASE}/auth/login`, { email, password }),
+  logout: () => postJSON<{ ok: boolean }>(`${API_BASE}/auth/logout`),
+  me: () => fetchJSON<{ user: any }>(`${API_BASE}/auth/me`),
 
   // Search (global)
   search: async (query: string) => {

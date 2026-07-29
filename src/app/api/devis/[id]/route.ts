@@ -1,22 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isAuthError, requireRole, type AuthUser } from '@/lib/api-auth'
 
-// GET /api/devis/[id] — get a single devis
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+const DEVIS_ROLES = ['admin', 'agent', 'client', 'correspondant'] as const
+type Ctx = { params: Promise<{ id: string }> }
+
+function canAccessDevis(
+  auth: AuthUser,
+  row: { clientId: string | null; compagnieId: string | null }
 ) {
+  if (auth.role === 'admin' || auth.role === 'agent') return true
+  if (auth.role === 'client') return row.clientId === auth.userId
+  if (auth.role === 'correspondant') return row.compagnieId === auth.companyId
+  return false
+}
+
+export async function GET(req: NextRequest, ctx: Ctx) {
   try {
+    const auth = await requireRole(req, [...DEVIS_ROLES])
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
     const devis = await db.devis.findUnique({
-      where: { id: params.id },
-      include: {
-        compagnie: true,
-        client: true,
-      },
+      where: { id },
+      include: { compagnie: true, client: true },
     })
 
     if (!devis) {
       return NextResponse.json({ error: 'Devis introuvable' }, { status: 404 })
+    }
+    if (!canAccessDevis(auth, devis)) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
     return NextResponse.json({ data: devis })
@@ -28,15 +42,13 @@ export async function GET(
   }
 }
 
-// PATCH /api/devis/[id] — update a devis
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
   try {
-    const body = await req.json()
-    const { id } = params
+    const auth = await requireRole(req, ['admin', 'agent'])
+    if (isAuthError(auth)) return auth
 
+    const { id } = await ctx.params
+    const body = await req.json()
     const existing = await db.devis.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Devis introuvable' }, { status: 404 })
@@ -62,8 +74,8 @@ export async function PATCH(
 
     await db.auditLog.create({
       data: {
-        userId: body.userId || null,
-        userName: body.userName || 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'UPDATE_DEVIS',
         entity: 'devis',
         entityId: id,
@@ -80,25 +92,25 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/devis/[id] — delete a devis
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, ctx: Ctx) {
   try {
-    const existing = await db.devis.findUnique({ where: { id: params.id } })
+    const auth = await requireRole(req, ['admin', 'agent'])
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
+    const existing = await db.devis.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Devis introuvable' }, { status: 404 })
     }
 
-    await db.devis.delete({ where: { id: params.id } })
-
+    await db.devis.delete({ where: { id } })
     await db.auditLog.create({
       data: {
-        userName: 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'DELETE_DEVIS',
         entity: 'devis',
-        entityId: params.id,
+        entityId: id,
         details: `Devis ${existing.reference} supprimé`,
       },
     })

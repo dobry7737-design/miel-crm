@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hashPassword } from '@/lib/password'
+import { isAuthError, requireRole } from '@/lib/api-auth'
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireRole(req, ['admin'])
+    if (isAuthError(auth)) return auth
+
     const { searchParams } = new URL(req.url)
     const role = searchParams.get('role')
     const statut = searchParams.get('statut')
@@ -25,7 +30,6 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     })
 
-    // Strip passwords from response
     const safe = users.map((u) => {
       const { password, ...rest } = u
       return rest
@@ -42,18 +46,38 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireRole(req, ['admin'])
+    if (isAuthError(auth)) return auth
+
     const body = await req.json()
 
-    // Check email uniqueness
-    const existing = await db.user.findUnique({ where: { email: body.email.toLowerCase() } })
+    if (!body.email || !body.name) {
+      return NextResponse.json(
+        { error: 'Email et nom requis' },
+        { status: 400 }
+      )
+    }
+
+    if (!body.password || String(body.password).length < 8) {
+      return NextResponse.json(
+        { error: 'Mot de passe requis (min. 8 caractères)' },
+        { status: 400 }
+      )
+    }
+
+    const existing = await db.user.findUnique({
+      where: { email: body.email.toLowerCase() },
+    })
     if (existing) {
       return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 409 })
     }
 
+    const hashed = await hashPassword(body.password)
+
     const user = await db.user.create({
       data: {
         email: body.email.toLowerCase(),
-        password: body.password || 'changeme123',
+        password: hashed,
         name: body.name,
         role: body.role || 'client',
         telephone: body.telephone || '',
@@ -65,12 +89,12 @@ export async function POST(req: NextRequest) {
 
     await db.auditLog.create({
       data: {
-        userId: body.createdBy || null,
-        userName: body.createdByName || 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'CREATE_USER',
         entity: 'user',
         entityId: user.id,
-        details: `Utilisateur ${body.name} (${body.role}) créé`,
+        details: `Utilisateur ${body.name} (${body.role || 'client'}) créé`,
       },
     })
 

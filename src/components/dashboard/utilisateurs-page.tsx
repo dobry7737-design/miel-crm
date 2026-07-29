@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Users,
   Edit,
   Eye,
-  TrendingUp,
-  TrendingDown,
   ShieldCheck,
   Briefcase,
   UserCircle2,
@@ -16,11 +15,6 @@ import {
   AlertCircle,
   Loader2,
   PartyPopper,
-  Search,
-  Download,
-  Filter,
-  Plus,
-  ChevronDown,
 } from 'lucide-react'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { StatutBadge } from '@/components/dashboard/statut-badge'
@@ -38,16 +32,10 @@ import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
 import { Pagination } from '@/components/dashboard/pagination'
 import { usePagination } from '@/lib/use-pagination'
-import { ROLE_LABELS, type Role } from '@/lib/auth'
+import { ROLE_LABELS, type Role, useAuth } from '@/lib/auth'
 import { api, type UserDTO } from '@/lib/api'
+import { useStats, useAllCompagnies } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
-
-const STAT_CARDS = [
-  { label: 'Total utilisateurs', value: '248', icon: Users, trend: '+12', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-  { label: 'Actifs', value: '187', icon: CheckCircle2, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-  { label: 'Agents', value: '32', icon: Briefcase, trend: '+3', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
-  { label: 'Suspendus', value: '4', icon: AlertCircle, trend: '-1', trendUp: false, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/40' },
-]
 
 const ROLE_ICONS: Record<Role, typeof ShieldCheck> = {
   admin: ShieldCheck,
@@ -65,6 +53,15 @@ const ROLE_BADGE_STYLES: Record<Role, string> = {
   correspondant: 'bg-rose-50 text-rose-600',
 }
 
+function formatDate(d: string | null | undefined) {
+  if (!d) return '—'
+  try {
+    return new Date(d).toLocaleDateString('fr-FR')
+  } catch {
+    return d
+  }
+}
+
 export function UtilisateursPage() {
   const { setPrimaryAction, openPrimaryAction } = useUI()
   const { pendingAction, clearPendingAction } = useNav()
@@ -73,6 +70,7 @@ export function UtilisateursPage() {
   const [view, setView] = useState<UserDTO | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [editing, setEditing] = useState<UserDTO | null>(null)
+  const { data: stats } = useStats()
 
   useEffect(() => {
     setPrimaryAction(() => {
@@ -94,6 +92,15 @@ export function UtilisateursPage() {
     queryFn: () => api.getUsers({ role: filterRole !== 'all' ? filterRole : undefined, search: search || undefined }),
   })
   const filtered = resp?.data || []
+  const t = stats?.totals
+  const totalUsers = t?.users ?? filtered.length
+
+  const statCards = [
+    { label: 'Total utilisateurs', value: String(totalUsers), icon: Users, hint: 'comptes', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+    { label: 'Actifs', value: String(t?.activeUsers ?? filtered.filter((u) => u.statut === 'Actif').length), icon: CheckCircle2, hint: 'connectés', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'Agents', value: String(t?.agentUsers ?? filtered.filter((u) => u.role === 'agent').length), icon: Briefcase, hint: 'courtiers', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+    { label: 'Suspendus', value: String(t?.suspendedUsers ?? filtered.filter((u) => u.statut === 'Suspendu').length), icon: AlertCircle, hint: 'bloqués', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/40' },
+  ]
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, filterRole])
@@ -102,7 +109,7 @@ export function UtilisateursPage() {
     <div>
       <PageHeader
         title="Gestion des Utilisateurs"
-        subtitle="Comptes clients, agents, gestionnaires et correspondants partenaires"
+        subtitle={`${totalUsers} compte${totalUsers > 1 ? 's' : ''} — clients, agents, gestionnaires et correspondants`}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher un utilisateur..."
@@ -114,7 +121,7 @@ export function UtilisateursPage() {
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((s) => {
+        {statCards.map((s) => {
           const Icon = s.icon
           return (
             <div
@@ -129,10 +136,7 @@ export function UtilisateursPage() {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
-                  {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {s.trend}
-                </span>
+                <span className="text-xs text-slate-400">{s.hint}</span>
               </div>
             </div>
           )
@@ -189,30 +193,31 @@ export function UtilisateursPage() {
                 </tr>
               ) : (
                 paged.map((u) => {
-                  const Icon = ROLE_ICONS[u.role]
+                  const Icon = ROLE_ICONS[u.role as Role] || UserCircle2
+                  const avatar = u.avatar || u.name?.slice(0, 2)?.toUpperCase() || '??'
                   return (
                     <tr key={u.id} className="transition hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
-                          <span className={`flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-semibold ${u.avatarColor}`}>
-                            {u.avatar}
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-[11px] font-semibold text-violet-600">
+                            {avatar}
                           </span>
                           <div>
                             <p className="text-sm font-medium text-slate-900 dark:text-slate-100">{u.name}</p>
-                            <p className="text-xs text-slate-400 dark:text-slate-500">{u.company?.nom || '' && `${u.company?.nom || ''}`}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{u.company?.nom || ''}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-3 text-slate-600 dark:text-slate-300">{u.email}</td>
                       <td className="px-5 py-3">
-                        <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold', ROLE_BADGE_STYLES[u.role])}>
+                        <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-semibold', ROLE_BADGE_STYLES[u.role as Role] || ROLE_BADGE_STYLES.client)}>
                           <Icon className="h-3 w-3" />
-                          {ROLE_LABELS[u.role]}
+                          {ROLE_LABELS[u.role as Role] || u.role}
                         </span>
                       </td>
                       <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{u.telephone}</td>
                       <td className="px-5 py-3"><StatutBadge statut={u.statut} /></td>
-                      <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{u.derniereConnexion}</td>
+                      <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400">{formatDate(u.lastLoginAt)}</td>
                       <td className="px-5 py-3 text-right">
                         <div className="flex justify-end gap-1">
                           <button
@@ -254,31 +259,31 @@ export function UtilisateursPage() {
       <Dialog open={!!view} onOpenChange={(v) => !v && setView(null)}>
         <DialogContent className="max-w-md bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
           <DialogHeader>
-            <DialogTitle className="text-base">Profil de {view?.nom}</DialogTitle>
+            <DialogTitle className="text-base">Profil de {view?.name}</DialogTitle>
             <DialogDescription className="text-xs">
-              Créé le {view?.dateCreation}
+              Créé le {formatDate(view?.createdAt)}
             </DialogDescription>
           </DialogHeader>
           {view && (
             <div className="space-y-4">
               <div className="flex flex-col items-center gap-3 rounded-xl bg-slate-50 p-5 text-center dark:bg-slate-800">
-                <span className={`flex h-16 w-16 items-center justify-center rounded-full text-lg font-semibold ${view.avatarColor}`}>
-                  {view.avatar}
+                <span className="flex h-16 w-16 items-center justify-center rounded-full bg-violet-100 text-lg font-semibold text-violet-600">
+                  {view.avatar || view.name?.slice(0, 2)?.toUpperCase() || '??'}
                 </span>
                 <div>
                   <p className="text-base font-semibold text-slate-900 dark:text-slate-100">{view.name}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">{view.email}</p>
                 </div>
-                <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold', ROLE_BADGE_STYLES[view.role])}>
-                  {ROLE_LABELS[view.role]}
+                <span className={cn('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold', ROLE_BADGE_STYLES[view.role as Role] || ROLE_BADGE_STYLES.client)}>
+                  {ROLE_LABELS[view.role as Role] || view.role}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <InfoField label="Téléphone" value={view.telephone} />
+                <InfoField label="Téléphone" value={view.telephone || '—'} />
                 <InfoField label="Statut" value={view.statut} />
-                <InfoField label="Date de création" value={view.dateCreation} />
-                <InfoField label="Dernière connexion" value={view.derniereConnexion} />
-                {view.compagnie && <InfoField label="Compagnie" value={view.compagnie} />}
+                <InfoField label="Date de création" value={formatDate(view.createdAt)} />
+                <InfoField label="Dernière connexion" value={formatDate(view.lastLoginAt)} />
+                {view.company?.nom && <InfoField label="Compagnie" value={view.company.nom} />}
               </div>
               <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
                 <Button variant="outline" size="sm" onClick={() => setView(null)}>Fermer</Button>
@@ -345,17 +350,6 @@ function InfoField({ label, value }: { label: string; value: string }) {
   )
 }
 
-const AVATAR_COLORS = [
-  'bg-violet-100 text-violet-600',
-  'bg-emerald-100 text-emerald-600',
-  'bg-amber-100 text-amber-600',
-  'bg-rose-100 text-rose-600',
-  'bg-blue-100 text-blue-600',
-  'bg-cyan-100 text-cyan-600',
-  'bg-fuchsia-100 text-fuchsia-600',
-  'bg-orange-100 text-orange-600',
-]
-
 const ROLES: Role[] = ['admin', 'agent', 'client', 'gestionnaire', 'correspondant']
 
 function UtilisateurEditModal({
@@ -367,32 +361,64 @@ function UtilisateurEditModal({
   onOpenChange: (v: boolean) => void
   editing: UserDTO | null
 }) {
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
+  const { data: compagniesResp } = useAllCompagnies()
+  const compagnies = compagniesResp?.data || []
   const [form, setForm] = useState(() => ({
-    nom: editing?.nom ?? '',
+    name: editing?.name ?? '',
     email: editing?.email ?? '',
     telephone: editing?.telephone ?? '',
-    role: editing?.role ?? ('client' as Role),
+    role: (editing?.role as Role) ?? ('client' as Role),
     statut: editing?.statut ?? ('Invité' as 'Actif' | 'Suspendu' | 'Invité'),
-    avatarColor: editing?.avatarColor ?? AVATAR_COLORS[0],
-    compagnie: editing?.compagnie ?? '',
+    companyId: editing?.companyId ?? '',
   }))
   const [submitting, setSubmitting] = useState(false)
   const [completed, setCompleted] = useState(false)
 
-  const canSubmit = form.nom && form.email
+  const canSubmit =
+    form.name &&
+    form.email &&
+    (form.role !== 'correspondant' || !!form.companyId)
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
+    try {
+      const avatar = form.name
+        .split(/\s+/)
+        .map((w) => w[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase()
+      const payload = {
+        name: form.name,
+        email: form.email,
+        telephone: form.telephone,
+        role: form.role,
+        statut: form.statut,
+        avatar,
+        companyId: form.role === 'correspondant' ? form.companyId || null : null,
+        createdBy: user?.id,
+        createdByName: user?.name,
+        updatedBy: user?.id,
+        updatedByName: user?.name,
+      }
+      if (editing) {
+        await api.updateUser(editing.id, payload)
+      } else {
+        await api.createUser(payload)
+      }
+      await queryClient.invalidateQueries({ queryKey: ['utilisateurs'] })
+      await queryClient.invalidateQueries({ queryKey: ['stats'] })
       setCompleted(true)
-      toast.success(
-        editing ? 'Utilisateur mis à jour' : 'Invitation envoyée',
-        {
-          description: `${form.nom} — Profil ${ROLE_LABELS[form.role]}.`,
-        }
-      )
-    }, 800)
+      toast.success(editing ? 'Utilisateur mis à jour' : 'Invitation envoyée', {
+        description: `${form.name} — Profil ${ROLE_LABELS[form.role]}.`,
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erreur lors de l\'enregistrement')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleClose = (v: boolean) => {
@@ -405,7 +431,7 @@ function UtilisateurEditModal({
       <DialogContent className="max-w-lg bg-slate-50 dark:bg-slate-900 dark:text-slate-100">
         <DialogHeader>
           <DialogTitle className="text-base">
-            {completed ? 'Utilisateur enregistré' : editing ? `Modifier ${editing.nom}` : 'Inviter un utilisateur'}
+            {completed ? 'Utilisateur enregistré' : editing ? `Modifier ${editing.name}` : 'Inviter un utilisateur'}
           </DialogTitle>
           <DialogDescription className="text-xs">
             {completed
@@ -424,7 +450,7 @@ function UtilisateurEditModal({
             </h3>
             <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
               {editing
-                ? `Les informations de ${form.nom} ont été mises à jour.`
+                ? `Les informations de ${form.name} ont été mises à jour.`
                 : `Un email a été envoyé à ${form.email} avec un lien d'activation du compte.`}
             </p>
             <Button size="sm" onClick={() => handleClose(false)} className="mt-2 bg-blue-600 hover:bg-blue-700">
@@ -439,8 +465,8 @@ function UtilisateurEditModal({
               </label>
               <input
                 type="text"
-                value={form.nom}
-                onChange={(e) => setForm((f) => ({ ...f, nom: e.target.value }))}
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder="ex: Aïssata Diallo"
                 className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
               />
@@ -505,16 +531,14 @@ function UtilisateurEditModal({
                   Compagnie partenaire <span className="text-rose-500">*</span>
                 </label>
                 <select
-                  value={form.compagnie}
-                  onChange={(e) => setForm((f) => ({ ...f, compagnie: e.target.value }))}
+                  value={form.companyId}
+                  onChange={(e) => setForm((f) => ({ ...f, companyId: e.target.value }))}
                   className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 >
                   <option value="">Sélectionner...</option>
-                  <option>NSIA Assurances</option>
-                  <option>SUNU Assurances</option>
-                  <option>AFG Assurances</option>
-                  <option>Sanlam Allianz</option>
-                  <option>SONAVIE</option>
+                  {compagnies.map((c) => (
+                    <option key={c.id} value={c.id}>{c.nom}</option>
+                  ))}
                 </select>
               </div>
             )}

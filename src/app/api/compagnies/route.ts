@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isAuthError, requireAuth, requireRole } from '@/lib/api-auth'
 
 export async function GET(req: NextRequest) {
   try {
+    const auth = await requireAuth(req)
+    if (isAuthError(auth)) return auth
+
     const { searchParams } = new URL(req.url)
     const statut = searchParams.get('statut')
     const search = searchParams.get('search')
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
+    if (auth.role === 'correspondant' && auth.companyId) {
+      where.id = auth.companyId
+    }
     if (statut) where.statut = statut
     if (search) {
       where.OR = [
@@ -18,11 +25,20 @@ export async function GET(req: NextRequest) {
 
     const compagnies = await db.compagnie.findMany({
       where,
-      include: { _count: { select: { devis: true, contrats: true, sinistres: true } } },
+      include: {
+        _count: { select: { devis: true, contrats: true, sinistres: true } },
+      },
       orderBy: { nom: 'asc' },
     })
 
-    return NextResponse.json({ data: compagnies })
+    const data = compagnies.map((c) => ({
+      ...c,
+      branches: c.branches
+        ? c.branches.split(',').map((s) => s.trim()).filter(Boolean)
+        : [],
+    }))
+
+    return NextResponse.json({ data })
   } catch (error) {
     return NextResponse.json(
       { error: 'Erreur serveur', details: error instanceof Error ? error.message : '' },
@@ -33,6 +49,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requireRole(req, ['admin'])
+    if (isAuthError(auth)) return auth
+
     const body = await req.json()
 
     const compagnie = await db.compagnie.create({
@@ -47,15 +66,18 @@ export async function POST(req: NextRequest) {
         contact: body.contact || '',
         email: body.email || '',
         telephone: body.telephone || '',
-        datePartenariat: body.datePartenariat || new Date().toISOString().split('T')[0],
-        branches: Array.isArray(body.branches) ? body.branches.join(',') : body.branches || '',
+        datePartenariat:
+          body.datePartenariat || new Date().toISOString().split('T')[0],
+        branches: Array.isArray(body.branches)
+          ? body.branches.join(',')
+          : body.branches || '',
       },
     })
 
     await db.auditLog.create({
       data: {
-        userId: body.userId || null,
-        userName: body.userName || 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'CREATE_COMPAGNIE',
         entity: 'compagnie',
         entityId: compagnie.id,
@@ -63,7 +85,17 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return NextResponse.json({ data: compagnie }, { status: 201 })
+    return NextResponse.json(
+      {
+        data: {
+          ...compagnie,
+          branches: compagnie.branches
+            ? compagnie.branches.split(',').map((s) => s.trim()).filter(Boolean)
+            : [],
+        },
+      },
+      { status: 201 }
+    )
   } catch (error) {
     return NextResponse.json(
       { error: 'Erreur lors de la création', details: error instanceof Error ? error.message : '' },

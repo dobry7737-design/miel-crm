@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useTheme } from 'next-themes'
 import {
   Search,
   RefreshCw,
@@ -18,9 +17,10 @@ import {
   Users,
   CornerDownLeft,
   Command,
+  BadgeCheck,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
-import { useNav, type PageId } from '@/lib/nav'
+import { useNav } from '@/lib/nav'
 import { useUI } from '@/lib/ui-store'
 import { ThemeToggle } from '@/components/dashboard/theme-toggle'
 import { toast } from 'sonner'
@@ -32,6 +32,8 @@ import {
 import { searchAll, type SearchResult } from '@/lib/search'
 import { CommandPalette } from '@/components/dashboard/command-palette'
 import { cn } from '@/lib/utils'
+import { useInvalidateDashboard } from '@/lib/hooks'
+import { api, type AuditLogDTO } from '@/lib/api'
 
 interface NotifItem {
   id: string
@@ -42,13 +44,7 @@ interface NotifItem {
   read: boolean
 }
 
-const SAMPLE_NOTIFS: NotifItem[] = [
-  { id: '1', title: 'Nouveau sinistre déclaré', description: 'SIN-2026-0098 · Ibrahim Coulibaly · Auto NSIA', time: 'il y a 3 min', type: 'danger', read: false },
-  { id: '2', title: 'Paiement reçu', description: 'PAY-2026-0321 · 185 000 FCFA via Orange Money', time: 'il y a 12 min', type: 'success', read: false },
-  { id: '3', title: 'Contrat expiré', description: 'CTR-2025-1142 · Modibo Sidibé · CNAR', time: 'il y a 1 h', type: 'warning', read: false },
-  { id: '4', title: 'Compagnie à valider', description: 'Takaful Mali · En attente d\'agrément CIMA', time: 'il y a 2 h', type: 'info', read: true },
-  { id: '5', title: 'Sinistre en alerte 72h', description: 'SIN-2026-0094 · Délai dépassé pour Aminata Touré', time: 'il y a 3 h', type: 'danger', read: true },
-]
+const READ_KEY = 'aam-notif-read'
 
 const TYPE_STYLES: Record<NotifItem['type'], { dot: string; bg: string; text: string }> = {
   info: { dot: 'bg-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/40', text: 'text-blue-600 dark:text-blue-300' },
@@ -57,14 +53,66 @@ const TYPE_STYLES: Record<NotifItem['type'], { dot: string; bg: string; text: st
   danger: { dot: 'bg-rose-500', bg: 'bg-rose-50 dark:bg-rose-900/40', text: 'text-rose-600 dark:text-rose-300' },
 }
 
+function relativeTime(iso: string): string {
+  const date = new Date(iso)
+  const diffMs = Date.now() - date.getTime()
+  if (Number.isNaN(diffMs)) return ''
+  const sec = Math.floor(diffMs / 1000)
+  if (sec < 60) return 'à l\'instant'
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `il y a ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `il y a ${h} h`
+  const d = Math.floor(h / 24)
+  if (d < 7) return `il y a ${d} j`
+  return date.toLocaleDateString('fr-FR')
+}
+
+function notifTypeFromAction(action: string): NotifItem['type'] {
+  const a = action.toUpperCase()
+  if (a.includes('DELETE') || a.includes('REJECT') || a.includes('FAIL')) return 'danger'
+  if (a.includes('CREATE') || a.includes('SUCCESS') || a.includes('PAY')) return 'success'
+  if (a.includes('UPDATE') || a.includes('ALERT') || a.includes('EXPIRE')) return 'warning'
+  return 'info'
+}
+
+function loadReadIds(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const raw = localStorage.getItem(READ_KEY)
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? new Set(parsed.filter((x) => typeof x === 'string')) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function saveReadIds(ids: Set<string>) {
+  localStorage.setItem(READ_KEY, JSON.stringify([...ids]))
+}
+
+function mapAuditToNotif(log: AuditLogDTO, readIds: Set<string>): NotifItem {
+  return {
+    id: log.id,
+    title: log.action,
+    description: log.details || `${log.entity}${log.entityId ? ` · ${log.entityId}` : ''}`,
+    time: relativeTime(log.createdAt),
+    type: notifTypeFromAction(log.action),
+    read: readIds.has(log.id),
+  }
+}
+
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user } = useAuth()
   const { page, setPage } = useNav()
   const { openPrimaryAction } = useUI()
+  const invalidateDashboard = useInvalidateDashboard()
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [readIds, setReadIds] = useState<Set<string>>(() => loadReadIds())
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const { data: searchResults = [] } = useQuery({
@@ -72,6 +120,27 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
     queryFn: () => searchAll(searchQuery),
     enabled: searchQuery.trim().length >= 2,
   })
+
+  const { data: auditResp } = useQuery({
+    queryKey: ['audit', 20],
+    queryFn: () => api.getAudit(20),
+    staleTime: 30 * 1000,
+  })
+
+  const notifs = useMemo(
+    () => (auditResp?.data || []).map((log) => mapAuditToNotif(log, readIds)),
+    [auditResp?.data, readIds]
+  )
+
+  const unreadCount = notifs.filter((n) => !n.read).length
+
+  const markAllRead = useCallback(() => {
+    const next = new Set(readIds)
+    notifs.forEach((n) => next.add(n.id))
+    setReadIds(next)
+    saveReadIds(next)
+    toast.success('Toutes les notifications marquées comme lues')
+  }, [notifs, readIds])
 
   const handleResultClick = (result: SearchResult) => {
     setPage(result.page)
@@ -113,16 +182,16 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
 
   const actionLabel = getActionLabel()
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setRefreshing(true)
     toast.info('Actualisation des données…', { description: 'Vos données sont rafraîchies.' })
-    setTimeout(() => {
-      setRefreshing(false)
+    try {
+      await invalidateDashboard()
       toast.success('Données actualisées', { description: 'La page est à jour.' })
-    }, 1000)
+    } finally {
+      setRefreshing(false)
+    }
   }
-
-  const unreadCount = SAMPLE_NOTIFS.filter((n) => !n.read).length
 
   return (
     <header className="relative flex items-center gap-2 border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-800 dark:bg-slate-900 sm:gap-3 sm:px-6">
@@ -262,7 +331,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 </p>
               </div>
               <button
-                onClick={() => toast.success('Toutes les notifications marquées comme lues')}
+                onClick={markAllRead}
                 className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
               >
                 <CheckCheck className="h-3.5 w-3.5" />
@@ -270,45 +339,51 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
               </button>
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {SAMPLE_NOTIFS.map((n) => {
-                const style = TYPE_STYLES[n.type]
-                return (
-                  <div
-                    key={n.id}
-                    className={cn(
-                      'flex items-start gap-3 border-b border-slate-100 px-4 py-3 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40',
-                      !n.read && 'bg-blue-50/30 dark:bg-blue-900/10'
-                    )}
-                  >
+              {notifs.length === 0 ? (
+                <div className="px-4 py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                  Aucune notification pour le moment
+                </div>
+              ) : (
+                notifs.map((n) => {
+                  const style = TYPE_STYLES[n.type]
+                  return (
                     <div
+                      key={n.id}
                       className={cn(
-                        'mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
-                        style.bg
+                        'flex items-start gap-3 border-b border-slate-100 px-4 py-3 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/40',
+                        !n.read && 'bg-blue-50/30 dark:bg-blue-900/10'
                       )}
                     >
-                      <span className={cn('h-2 w-2 rounded-full', style.dot)} />
+                      <div
+                        className={cn(
+                          'mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg',
+                          style.bg
+                        )}
+                      >
+                        <span className={cn('h-2 w-2 rounded-full', style.dot)} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          {n.title}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
+                          {n.description}
+                        </p>
+                        <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+                          {n.time}
+                        </p>
+                      </div>
+                      {!n.read && (
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                      )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        {n.title}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
-                        {n.description}
-                      </p>
-                      <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
-                        {n.time}
-                      </p>
-                    </div>
-                    {!n.read && (
-                      <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-                    )}
-                  </div>
-                )
-              })}
+                  )
+                })
+              )}
             </div>
             <div className="border-t border-slate-100 p-2 dark:border-slate-800">
               <button
-                onClick={() => toast.info('Ouverture du centre de notifications')}
+                onClick={() => toast.info('Journal d\'audit — dernières actions')}
                 className="w-full rounded-lg py-2 text-center text-xs font-semibold text-blue-600 transition hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/40"
               >
                 Voir toutes les notifications
@@ -326,6 +401,24 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
             <span className="hidden sm:inline">{actionLabel}</span>
           </button>
         )}
+
+        {/* Profil utilisateur */}
+        <div className="flex items-center gap-2.5 border-l border-slate-200 pl-2 dark:border-slate-700 sm:pl-3">
+          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 text-xs font-semibold text-white shadow-sm">
+            {user.avatar}
+            <span className="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white dark:bg-slate-900">
+              <BadgeCheck className="h-3.5 w-3.5 text-blue-500" fill="currentColor" />
+            </span>
+          </div>
+          <div className="hidden min-w-0 flex-col sm:flex">
+            <span className="max-w-[140px] truncate text-sm font-semibold leading-tight text-slate-900 dark:text-slate-100 lg:max-w-[180px]">
+              {user.name}
+            </span>
+            <span className="max-w-[140px] truncate text-[11px] leading-tight text-slate-500 dark:text-slate-400 lg:max-w-[180px]">
+              {user.company || user.email}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Command palette modal (Ctrl/Cmd+K) */}

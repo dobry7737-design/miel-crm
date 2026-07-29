@@ -1,19 +1,17 @@
 'use client'
 
 import {
-  ArrowUpRight,
-  ArrowDownRight,
   FileText,
   ShieldCheck,
   LifeBuoy,
   Wallet,
-  Users,
+  Package,
   Building2,
   AlertTriangle,
+  ArrowUpRight,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth, type Role } from '@/lib/auth'
-import { formatFCFA } from '@/lib/api'
 import { useStats } from '@/lib/hooks'
 import type { LucideIcon } from 'lucide-react'
 
@@ -22,9 +20,7 @@ interface StatCardProps {
   value: number | string
   unit?: string
   icon: LucideIcon
-  trend: number
-  trendUp: boolean
-  trendLabel?: string
+  hint?: string
   iconColor: string
   iconBg: string
 }
@@ -40,34 +36,34 @@ export function StatCards() {
 
   const statsByRole: Record<Role, StatCardProps[]> = {
     admin: [
-      { label: 'Total Devis', value: t?.devis ?? 0, icon: FileText, trend: 12, trendUp: true, trendLabel: 'vs mois dernier', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
-      { label: 'Contrats Actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 8, trendUp: true, trendLabel: 'ce mois', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, trend: 5, trendUp: false, trendLabel: 'engagement 72h', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
-      { label: 'Total Paiements', value: f ? (f.totalPayments / 1000000).toFixed(1) : '0', unit: 'M FCFA', icon: Wallet, trend: 18, trendUp: true, trendLabel: 'vs N-1', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+      { label: 'Total Devis', value: t?.devis ?? 0, icon: FileText, hint: 'tous statuts', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+      { label: 'Contrats Actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, hint: `${t?.pendingContrats ?? 0} en attente`, iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, hint: 'engagement 72h', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+      { label: 'Total Paiements', value: f ? (f.totalPayments / 1000000).toFixed(1) : '0', unit: 'M FCFA', icon: Wallet, hint: 'paiements réussis', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
     ],
     agent: [
-      { label: 'Devis', value: t?.devis ?? 0, icon: FileText, trend: 23, trendUp: true, trendLabel: 'ce mois', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
-      { label: 'Contrats actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 6, trendUp: true, trendLabel: 'portefeuille', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-      { label: 'Commissions', value: f ? (f.totalCommissions / 1000000).toFixed(1) : '0', unit: 'M FCFA', icon: Wallet, trend: 14, trendUp: true, trendLabel: 'vs mois dernier', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
-      { label: 'Taux transformation', value: t && t.devis > 0 ? Math.round((t.activeContrats / t.devis) * 100) : 0, unit: '%', icon: ArrowUpRight, trend: 4, trendUp: true, trendLabel: 'devis → contrats', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Devis', value: t?.devis ?? 0, icon: FileText, hint: 'portefeuille', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+      { label: 'Contrats actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, hint: 'portefeuille', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Commissions', value: f ? (f.totalCommissions / 1000000).toFixed(1) : '0', unit: 'M FCFA', icon: Wallet, hint: 'cumul réussi', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+      { label: 'Taux transformation', value: t && t.devis > 0 ? Math.round((t.activeContrats / t.devis) * 100) : 0, unit: '%', icon: ArrowUpRight, hint: 'devis → contrats', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
     ],
     client: [
-      { label: 'Mes contrats actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 0, trendUp: true, trendLabel: 'Auto · Santé · Habitation', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-      { label: 'Échéance proche', value: 1, icon: AlertTriangle, trend: 12, trendUp: false, trendLabel: 'dans 12 jours', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
-      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, trend: 0, trendUp: true, trendLabel: 'aucun sinistre actif', iconColor: 'text-slate-600 dark:text-slate-300', iconBg: 'bg-slate-100 dark:bg-slate-800' },
-      { label: 'Mes devis récents', value: t?.devis ?? 0, icon: FileText, trend: 0, trendUp: true, trendLabel: 'comparaisons effectuées', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+      { label: 'Mes contrats actifs', value: t?.activeContrats ?? 0, icon: ShieldCheck, hint: 'portefeuille', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Échéance proche', value: t?.renewalsSoon ?? 0, icon: AlertTriangle, hint: 'sous 30 jours', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, hint: 'dossiers ouverts', iconColor: 'text-slate-600 dark:text-slate-300', iconBg: 'bg-slate-100 dark:bg-slate-800' },
+      { label: 'Mes devis récents', value: t?.devis ?? 0, icon: FileText, hint: 'comparaisons', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
     ],
     gestionnaire: [
-      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, trend: 5, trendUp: false, trendLabel: 'engagement 72h', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
-      { label: 'Sinistres traités', value: (t?.sinistres ?? 0) - (t?.pendingSinistres ?? 0), icon: ShieldCheck, trend: 12, trendUp: true, trendLabel: 'dans les délais', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-      { label: 'En alerte (>72h)', value: 3, icon: AlertTriangle, trend: 0, trendUp: false, trendLabel: 'à traiter en urgence', iconColor: 'text-rose-600', iconBg: 'bg-rose-50 dark:bg-rose-900/40' },
-      { label: 'Délai moyen', value: 38, unit: 'h', icon: ArrowUpRight, trend: 22, trendUp: true, trendLabel: 'amélioration délai', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+      { label: 'Sinistres en cours', value: t?.pendingSinistres ?? 0, icon: LifeBuoy, hint: 'engagement 72h', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+      { label: 'Sinistres traités', value: t?.treatedSinistres ?? 0, icon: ShieldCheck, hint: 'clos / validés', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'En alerte (>72h)', value: t?.alertOver72 ?? 0, icon: AlertTriangle, hint: 'à traiter en urgence', iconColor: 'text-rose-600', iconBg: 'bg-rose-50 dark:bg-rose-900/40' },
+      { label: 'Délai moyen', value: t?.avgDelaiH ?? 0, unit: 'h', icon: ArrowUpRight, hint: 'tous dossiers', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
     ],
     correspondant: [
-      { label: 'Compagnies', value: t?.compagnies ?? 0, icon: Building2, trend: 0, trendUp: true, trendLabel: 'grilles tarifaires actives', iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
-      { label: 'Devis générés', value: t?.devis ?? 0, icon: ArrowUpRight, trend: 28, trendUp: true, trendLabel: 'via comparateur', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-      { label: 'Contrats souscrits', value: t?.activeContrats ?? 0, icon: ShieldCheck, trend: 15, trendUp: true, trendLabel: 'cette année', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
-      { label: 'Utilisateurs actifs', value: t?.activeUsers ?? 0, icon: Users, trend: 0.2, trendUp: true, trendLabel: 'satisfaction clients', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
+      { label: 'Compagnies', value: t?.compagnies ?? 0, icon: Building2, hint: `${t?.activeCompagnies ?? 0} actives`, iconColor: 'text-violet-600', iconBg: 'bg-violet-50 dark:bg-violet-900/40' },
+      { label: 'Devis générés', value: t?.devis ?? 0, icon: ArrowUpRight, hint: 'via comparateur', iconColor: 'text-emerald-600', iconBg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+      { label: 'Contrats souscrits', value: t?.activeContrats ?? 0, icon: ShieldCheck, hint: 'actifs', iconColor: 'text-blue-600', iconBg: 'bg-blue-50 dark:bg-blue-900/40' },
+      { label: 'Produits actifs', value: t?.produits ?? 0, icon: Package, hint: 'catalogue compagnie', iconColor: 'text-amber-600', iconBg: 'bg-amber-50 dark:bg-amber-900/40' },
     ],
   }
 
@@ -87,13 +83,10 @@ function StatCard({
   value,
   unit,
   icon: Icon,
-  trend,
-  trendUp,
-  trendLabel,
+  hint,
   iconColor,
   iconBg,
 }: StatCardProps) {
-  const hasTrend = trend > 0
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/50 transition hover:shadow-md hover:shadow-slate-200/70 dark:border-slate-800 dark:bg-slate-900 dark:shadow-slate-950/30 dark:hover:shadow-slate-950/50">
       <div className="flex items-center justify-between">
@@ -118,25 +111,9 @@ function StatCard({
             </span>
           )}
         </span>
-        {hasTrend ? (
-          <span
-            className={cn(
-              'flex items-center gap-0.5 text-xs font-semibold',
-              trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'
-            )}
-          >
-            {trendUp ? (
-              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-            ) : (
-              <ArrowDownRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-            )}
-            {trendUp ? '+' : '-'}
-            {trend}%
-          </span>
-        ) : null}
       </div>
-      {trendLabel && (
-        <p className="text-xs text-slate-400 dark:text-slate-500">{trendLabel}</p>
+      {hint && (
+        <p className="text-xs text-slate-400 dark:text-slate-500">{hint}</p>
       )}
     </div>
   )

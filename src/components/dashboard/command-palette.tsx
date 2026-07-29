@@ -22,6 +22,7 @@ import { useTheme } from 'next-themes'
 import { useNav, type PageId } from '@/lib/nav'
 import { useAuth, ROLE_LABELS, type Role } from '@/lib/auth'
 import { cn } from '@/lib/utils'
+import { useStats } from '@/lib/hooks'
 
 interface CommandItem {
   id: string
@@ -43,6 +44,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const { user, logout } = useAuth()
   const { setPage, goToPageWithAction } = useNav()
   const { theme, setTheme } = useTheme()
+  const { data: stats } = useStats()
+  const compagniesCount = stats?.totals?.compagnies
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [prevQuery, setPrevQuery] = useState('')
@@ -111,7 +114,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     {
       id: 'nav-compagnies',
       label: 'Compagnies Partenaires',
-      description: 'Référentiel des 11 compagnies agréées CIMA',
+      description: compagniesCount != null
+        ? `Référentiel des ${compagniesCount} compagnies agréées CIMA`
+        : 'Référentiel des compagnies agréées CIMA',
       icon: Building2,
       group: 'navigation',
       onSelect: () => navigate('compagnies'),
@@ -219,7 +224,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
       onSelect: () => {
         onOpenChange(false)
         setTimeout(() => {
-          logout()
+          void logout()
         }, 100)
       },
     },

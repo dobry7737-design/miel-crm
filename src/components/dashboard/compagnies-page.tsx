@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Eye,
   Edit,
   Building2,
-  TrendingUp,
-  TrendingDown,
   Star,
   Clock,
   CheckCircle2,
@@ -30,14 +29,9 @@ import { useUI } from '@/lib/ui-store'
 import { useNav } from '@/lib/nav'
 import { Pagination } from '@/components/dashboard/pagination'
 import { usePagination } from '@/lib/use-pagination'
-import { api, type CompagnieDTO } from '@/lib/api'
-
-const STAT_CARDS = [
-  { label: 'Total compagnies', value: '11', icon: Building2, trend: '+1', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-  { label: 'Actives', value: '8', icon: CheckCircle2, trend: '+1', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-  { label: 'À valider', value: '3', icon: AlertCircle, trend: '0', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
-  { label: 'Délai moyen (h)', value: '29', icon: Clock, trend: '-12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
-]
+import { api, parseCsvList, type CompagnieDTO } from '@/lib/api'
+import { useStats } from '@/lib/hooks'
+import { useAuth } from '@/lib/auth'
 
 export function CompagniesPage() {
   const { setPrimaryAction, openPrimaryAction } = useUI()
@@ -46,6 +40,7 @@ export function CompagniesPage() {
   const [view, setView] = useState<CompagnieDTO | null>(null)
   const [editOpen, setEditOpen] = useState(false)
   const [editing, setEditing] = useState<CompagnieDTO | null>(null)
+  const { data: stats } = useStats()
 
   useEffect(() => {
     setPrimaryAction(() => {
@@ -67,6 +62,15 @@ export function CompagniesPage() {
     queryFn: () => api.getCompagnies({ search: search || undefined }),
   })
   const filtered = resp?.data || []
+  const t = stats?.totals
+  const totalCount = t?.compagnies ?? filtered.length
+
+  const statCards = [
+    { label: 'Total compagnies', value: String(totalCount), icon: Building2, hint: 'référentiel', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+    { label: 'Actives', value: String(t?.activeCompagnies ?? filtered.filter((c) => c.statut === 'Actif').length), icon: CheckCircle2, hint: 'partenaires', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'À valider', value: String(t?.pendingCompagnies ?? filtered.filter((c) => c.statut === 'À valider').length), icon: AlertCircle, hint: 'en revue', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+    { label: 'Délai moyen (h)', value: String(t?.avgCompagnieDelai ?? 0), icon: Clock, hint: 'sinistres', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+  ]
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 8, [search])
@@ -75,7 +79,7 @@ export function CompagniesPage() {
     <div>
       <PageHeader
         title="Compagnies Partenaires"
-        subtitle="Référentiel des 11 compagnies agréées CIMA"
+        subtitle={`Référentiel des ${totalCount} compagnie${totalCount > 1 ? 's' : ''} agréée${totalCount > 1 ? 's' : ''} CIMA`}
         searchValue={search}
         onSearchChange={setSearch}
         searchPlaceholder="Rechercher une compagnie..."
@@ -87,7 +91,7 @@ export function CompagniesPage() {
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((s) => {
+        {statCards.map((s) => {
           const Icon = s.icon
           return (
             <div
@@ -102,10 +106,7 @@ export function CompagniesPage() {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
-                  {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {s.trend}
-                </span>
+                <span className="text-xs text-slate-400">{s.hint}</span>
               </div>
             </div>
           )
@@ -153,7 +154,7 @@ export function CompagniesPage() {
             </div>
 
             <div className="mt-3 flex flex-wrap gap-1">
-              {c.branches.map((b) => (
+              {parseCsvList(c.branches).map((b) => (
                 <span key={b} className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                   {b}
                 </span>
@@ -224,7 +225,7 @@ export function CompagniesPage() {
                   Branches couvertes
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {view.branches.map((b) => (
+                  {parseCsvList(view.branches).map((b) => (
                     <span key={b} className="rounded-lg bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                       {b}
                     </span>
@@ -309,6 +310,8 @@ function CompagnieEditModal({
   onOpenChange: (v: boolean) => void
   editing: CompagnieDTO | null
 }) {
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
   const [form, setForm] = useState(() => ({
     nom: editing?.nom ?? '',
     agrement: editing?.agrement ?? '',
@@ -317,25 +320,52 @@ function CompagnieEditModal({
     telephone: editing?.telephone ?? '',
     iconColor: editing?.iconColor ?? ICON_COLORS[0],
     statut: editing?.statut ?? ('À valider' as 'Actif' | 'À valider' | 'Inactif'),
-    branches: editing?.branches ?? ([] as string[]),
+    branches: parseCsvList(editing?.branches),
   }))
   const [submitting, setSubmitting] = useState(false)
   const [completed, setCompleted] = useState(false)
 
   const canSubmit = form.nom && form.agrement && form.contact && form.email
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
+    try {
+      const initials =
+        form.nom
+          .split(/\s+/)
+          .map((w) => w[0])
+          .join('')
+          .slice(0, 3)
+          .toUpperCase() || 'CO'
+      const payload = {
+        nom: form.nom,
+        agrement: form.agrement,
+        contact: form.contact,
+        email: form.email,
+        telephone: form.telephone,
+        iconColor: form.iconColor,
+        statut: form.statut,
+        branches: form.branches,
+        initials,
+        userId: user?.id,
+        userName: user?.name,
+      }
+      if (editing) {
+        await api.updateCompagnie(editing.id, payload)
+      } else {
+        await api.createCompagnie(payload)
+      }
+      await queryClient.invalidateQueries({ queryKey: ['compagnies'] })
+      await queryClient.invalidateQueries({ queryKey: ['stats'] })
       setCompleted(true)
-      toast.success(
-        editing ? 'Compagnie mise à jour' : 'Compagnie ajoutée',
-        {
-          description: `${form.nom} (${form.agrement}) — ${form.branches.length} branche(s) couverte(s).`,
-        }
-      )
-    }, 800)
+      toast.success(editing ? 'Compagnie mise à jour' : 'Compagnie ajoutée', {
+        description: `${form.nom} (${form.agrement}) — ${form.branches.length} branche(s) couverte(s).`,
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erreur lors de l\'enregistrement')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleClose = (v: boolean) => {

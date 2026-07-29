@@ -8,6 +8,7 @@ export type PageId =
   | 'contrats'
   | 'sinistres'
   | 'compagnies'
+  | 'produits'
   | 'paiements'
   | 'analytics'
   | 'utilisateurs'

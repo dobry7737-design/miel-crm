@@ -1,18 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { isAuthError, requireRole, type AuthUser } from '@/lib/api-auth'
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+type Ctx = { params: Promise<{ id: string }> }
+
+function canAccess(
+  auth: AuthUser,
+  row: { clientId: string | null; compagnieId: string | null }
 ) {
+  if (['admin', 'agent', 'gestionnaire'].includes(auth.role)) return true
+  if (auth.role === 'client') return row.clientId === auth.userId
+  return false
+}
+
+export async function GET(req: NextRequest, ctx: Ctx) {
   try {
+    const auth = await requireRole(req, [
+      'admin',
+      'agent',
+      'client',
+      'gestionnaire',
+    ])
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
     const sinistre = await db.sinistre.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { compagnie: true, client: true },
     })
 
     if (!sinistre) {
       return NextResponse.json({ error: 'Sinistre introuvable' }, { status: 404 })
+    }
+    if (!canAccess(auth, sinistre)) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
     }
 
     return NextResponse.json({ data: sinistre })
@@ -24,22 +45,25 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
   try {
+    const auth = await requireRole(req, ['admin', 'agent', 'gestionnaire'])
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
     const body = await req.json()
-    const existing = await db.sinistre.findUnique({ where: { id: params.id } })
+    const existing = await db.sinistre.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Sinistre introuvable' }, { status: 404 })
     }
 
     const updated = await db.sinistre.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(body.statut && { statut: body.statut }),
-        ...(body.montantRembourse !== undefined && { montantRembourse: body.montantRembourse }),
+        ...(body.montantRembourse !== undefined && {
+          montantRembourse: body.montantRembourse,
+        }),
         ...(body.dateTraitement && { dateTraitement: body.dateTraitement }),
         ...(body.delaiH !== undefined && { delaiH: body.delaiH }),
         ...(body.gestionnaire && { gestionnaire: body.gestionnaire }),
@@ -51,11 +75,11 @@ export async function PATCH(
 
     await db.auditLog.create({
       data: {
-        userId: body.userId || null,
-        userName: body.userName || 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'UPDATE_SINISTRE',
         entity: 'sinistre',
-        entityId: params.id,
+        entityId: id,
         details: `Sinistre ${existing.reference} mis à jour — statut: ${body.statut || existing.statut}`,
       },
     })
@@ -69,23 +93,25 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, ctx: Ctx) {
   try {
-    const existing = await db.sinistre.findUnique({ where: { id: params.id } })
+    const auth = await requireRole(req, ['admin'])
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
+    const existing = await db.sinistre.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Sinistre introuvable' }, { status: 404 })
     }
 
-    await db.sinistre.delete({ where: { id: params.id } })
+    await db.sinistre.delete({ where: { id } })
     await db.auditLog.create({
       data: {
-        userName: 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'DELETE_SINISTRE',
         entity: 'sinistre',
-        entityId: params.id,
+        entityId: id,
         details: `Sinistre ${existing.reference} supprimé`,
       },
     })

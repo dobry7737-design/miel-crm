@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { hashPassword } from '@/lib/password'
+import { isAuthError, requireAuth, requireRole } from '@/lib/api-auth'
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+type Ctx = { params: Promise<{ id: string }> }
+
+export async function GET(req: NextRequest, ctx: Ctx) {
   try {
+    const auth = await requireAuth(req)
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
+    if (auth.role !== 'admin' && auth.userId !== id) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+    }
+
     const user = await db.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: { company: true },
     })
     if (!user) {
@@ -23,19 +32,25 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: NextRequest, ctx: Ctx) {
   try {
+    const auth = await requireRole(req, ['admin'])
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
     const body = await req.json()
-    const existing = await db.user.findUnique({ where: { id: params.id } })
+    const existing = await db.user.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
     }
 
+    const passwordUpdate =
+      body.password && String(body.password).length >= 8
+        ? { password: await hashPassword(body.password) }
+        : {}
+
     const updated = await db.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(body.name && { name: body.name }),
         ...(body.role && { role: body.role }),
@@ -43,16 +58,17 @@ export async function PATCH(
         ...(body.statut && { statut: body.statut }),
         ...(body.avatar !== undefined && { avatar: body.avatar }),
         ...(body.companyId !== undefined && { companyId: body.companyId }),
+        ...passwordUpdate,
       },
     })
 
     await db.auditLog.create({
       data: {
-        userId: body.updatedBy || null,
-        userName: body.updatedByName || 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'UPDATE_USER',
         entity: 'user',
-        entityId: params.id,
+        entityId: id,
         details: `Utilisateur ${existing.name} mis à jour`,
       },
     })
@@ -67,23 +83,25 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(req: NextRequest, ctx: Ctx) {
   try {
-    const existing = await db.user.findUnique({ where: { id: params.id } })
+    const auth = await requireRole(req, ['admin'])
+    if (isAuthError(auth)) return auth
+
+    const { id } = await ctx.params
+    const existing = await db.user.findUnique({ where: { id } })
     if (!existing) {
       return NextResponse.json({ error: 'Utilisateur introuvable' }, { status: 404 })
     }
 
-    await db.user.delete({ where: { id: params.id } })
+    await db.user.delete({ where: { id } })
     await db.auditLog.create({
       data: {
-        userName: 'System',
+        userId: auth.userId,
+        userName: auth.email,
         action: 'DELETE_USER',
         entity: 'user',
-        entityId: params.id,
+        entityId: id,
         details: `Utilisateur ${existing.name} supprimé`,
       },
     })

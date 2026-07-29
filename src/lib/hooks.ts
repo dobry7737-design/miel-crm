@@ -1,7 +1,8 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import { api, type StatsQueryParams } from '@/lib/api'
+import { useOptionalDashboardFilters } from '@/lib/dashboard-filters'
 
 /**
  * Shared hooks for dashboard data.
@@ -9,16 +10,26 @@ import { api } from '@/lib/api'
  * useQuery with the same queryKey will share a single network request.
  */
 
-// Stats — used by StatCards, BugsStatusChart, BugsBySeverity, Analytics
-export function useStats() {
+// Stats — used by StatCards, charts, Analytics, list pages
+export function useStats(params?: StatsQueryParams) {
+  const filters = useOptionalDashboardFilters()
+  const branche =
+    params?.branche ??
+    (filters?.branche && filters.branche !== 'all' ? filters.branche : 'all')
+  const days = params?.days ?? filters?.days ?? 'all'
+
   return useQuery({
-    queryKey: ['stats'],
-    queryFn: () => api.getStats(),
-    staleTime: 60 * 1000, // 1 min cache
+    queryKey: ['stats', { branche, days }],
+    queryFn: () =>
+      api.getStats({
+        branche: branche === 'all' ? undefined : String(branche),
+        days,
+      }),
+    staleTime: 60 * 1000,
   })
 }
 
-// All devis — used by BugTrendsChart, BugsPerDeveloper, RecentActivity, DevisPage, Analytics, Search
+// All devis — used by list pages / analytics fallbacks
 export function useAllDevis() {
   return useQuery({
     queryKey: ['devis', {}],
@@ -27,7 +38,6 @@ export function useAllDevis() {
   })
 }
 
-// All contrats — used by BugTrendsChart, Analytics
 export function useAllContrats() {
   return useQuery({
     queryKey: ['contrats', {}],
@@ -36,7 +46,6 @@ export function useAllContrats() {
   })
 }
 
-// All sinistres — used by ResolutionTimeChart
 export function useAllSinistres() {
   return useQuery({
     queryKey: ['sinistres', {}],
@@ -45,7 +54,6 @@ export function useAllSinistres() {
   })
 }
 
-// All compagnies — used by ActiveProjects, CompagniesPage
 export function useAllCompagnies() {
   return useQuery({
     queryKey: ['compagnies', {}],
@@ -54,14 +62,28 @@ export function useAllCompagnies() {
   })
 }
 
-// Invalidate all dashboard queries (use after mutations)
+export function useAudit(limit = 12) {
+  return useQuery({
+    queryKey: ['audit', limit],
+    queryFn: () => api.getAudit(limit),
+    staleTime: 60 * 1000,
+  })
+}
+
 export function useInvalidateDashboard() {
   const queryClient = useQueryClient()
-  return () => {
-    queryClient.invalidateQueries({ queryKey: ['stats'] })
-    queryClient.invalidateQueries({ queryKey: ['devis'] })
-    queryClient.invalidateQueries({ queryKey: ['contrats'] })
-    queryClient.invalidateQueries({ queryKey: ['sinistres'] })
-    queryClient.invalidateQueries({ queryKey: ['compagnies'] })
+  return async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['stats'] }),
+      queryClient.invalidateQueries({ queryKey: ['devis'] }),
+      queryClient.invalidateQueries({ queryKey: ['contrats'] }),
+      queryClient.invalidateQueries({ queryKey: ['sinistres'] }),
+      queryClient.invalidateQueries({ queryKey: ['compagnies'] }),
+      queryClient.invalidateQueries({ queryKey: ['paiements'] }),
+      queryClient.invalidateQueries({ queryKey: ['utilisateurs'] }),
+      queryClient.invalidateQueries({ queryKey: ['produits'] }),
+      queryClient.invalidateQueries({ queryKey: ['audit'] }),
+      queryClient.invalidateQueries({ queryKey: ['parametres'] }),
+    ])
   }
 }

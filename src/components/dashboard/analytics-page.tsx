@@ -16,8 +16,6 @@ import {
   Cell,
 } from 'recharts'
 import {
-  TrendingUp,
-  TrendingDown,
   Wallet,
   ShieldCheck,
   FileText,
@@ -25,6 +23,7 @@ import {
   Award,
   Zap,
   Clock,
+  TrendingDown,
 } from 'lucide-react'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { ChartCard } from '@/components/dashboard/chart-card'
@@ -59,10 +58,10 @@ export function AnalyticsPage() {
 
   // KPI cards
   const KPI_CARDS = [
-    { label: 'CA total', value: f ? `${(f.totalPayments / 1000000).toFixed(1)}M` : '0', unit: 'FCFA', icon: Wallet, trend: '+18%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-    { label: 'Devis émis', value: String(t?.devis ?? 0), icon: FileText, trend: '+12%', trendUp: true, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
-    { label: 'Contrats souscrits', value: String(t?.activeContrats ?? 0), icon: ShieldCheck, trend: '+8%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-    { label: 'Sinistres traités', value: String((t?.sinistres ?? 0) - (t?.pendingSinistres ?? 0)), icon: LifeBuoy, trend: '+22%', trendUp: true, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+    { label: 'CA total', value: f ? `${(f.totalPayments / 1000000).toFixed(1)}M` : '0', unit: 'FCFA', icon: Wallet, hint: 'encaissé', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+    { label: 'Devis émis', value: String(t?.devis ?? 0), icon: FileText, hint: 'volume', color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/40' },
+    { label: 'Contrats souscrits', value: String(t?.activeContrats ?? 0), icon: ShieldCheck, hint: 'actifs', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'Sinistres traités', value: String(t?.treatedSinistres ?? Math.max(0, (t?.sinistres ?? 0) - (t?.pendingSinistres ?? 0))), icon: LifeBuoy, hint: 'clos', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
   ]
 
   // CA par branche (from contrats prime sum by branche)
@@ -116,10 +115,10 @@ export function AnalyticsPage() {
 
   // Score quality
   const scoreItems = [
-    { label: 'Satisfaction client', value: 98, barColor: '#10B981', iconColor: 'text-emerald-500' },
-    { label: 'Taux de conversion', value: t && t.devis > 0 ? Math.round((t.activeContrats / t.devis) * 100) : 0, barColor: '#3B82F6', iconColor: 'text-blue-500' },
-    { label: 'Respect délai 72h', value: 95, barColor: '#8B5CF6', iconColor: 'text-violet-500' },
-    { label: 'Taux de sinistralité', value: t && t.activeContrats > 0 ? Math.round((t.sinistres / t.activeContrats) * 100) : 0, barColor: '#F43F5E', iconColor: 'text-rose-500' },
+    { label: 'Taux de conversion', value: stats?.scores?.conversionRate ?? 0, barColor: '#3B82F6', iconColor: 'text-blue-500' },
+    { label: 'Respect délai 72h', value: stats?.scores?.respectDelai72h ?? 0, barColor: '#8B5CF6', iconColor: 'text-violet-500' },
+    { label: 'Taux de sinistralité', value: Math.min(100, stats?.scores?.sinistralite ?? 0), barColor: '#F43F5E', iconColor: 'text-rose-500' },
+    { label: 'Compagnies actives', value: t && t.compagnies > 0 ? Math.round(((t.activeCompagnies ?? 0) / t.compagnies) * 100) : 0, barColor: '#10B981', iconColor: 'text-emerald-500' },
   ]
 
   return (
@@ -149,10 +148,7 @@ export function AnalyticsPage() {
                   {s.value}
                   {s.unit && <span className="ml-1 text-xs text-slate-400 dark:text-slate-500">{s.unit}</span>}
                 </span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500 dark:text-rose-400'}`}>
-                  {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {s.trend}
-                </span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{s.hint}</span>
               </div>
             </div>
           )
@@ -324,7 +320,13 @@ export function AnalyticsPage() {
           bodyClassName="flex flex-col gap-3"
         >
           {scoreItems.map((s) => {
-            const Icon = s.label.includes('Satisfaction') ? Award : s.label.includes('conversion') ? Zap : s.label.includes('délai') ? Clock : TrendingDown
+            const Icon = s.label.includes('Compagnies')
+              ? Award
+              : s.label.includes('conversion')
+                ? Zap
+                : s.label.includes('délai')
+                  ? Clock
+                  : TrendingDown
             return (
               <div key={s.label} className="flex items-center gap-3">
                 <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800`} style={{ color: s.iconColor }}>

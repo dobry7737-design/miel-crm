@@ -6,12 +6,12 @@ import {
   FileText,
   ShieldCheck,
   Building2,
+  Package,
   Wallet,
   BarChart3,
   Users,
   Settings,
   LogOut,
-  BadgeCheck,
   X,
   LifeBuoy,
   AlertTriangle,
@@ -69,6 +69,12 @@ const navItems: NavItem[] = [
     roles: ['admin', 'correspondant'],
   },
   {
+    id: 'produits',
+    label: 'Produits',
+    icon: Package,
+    roles: ['admin', 'correspondant'],
+  },
+  {
     id: 'paiements',
     label: 'Paiements',
     icon: Wallet,
@@ -113,7 +119,7 @@ export function Sidebar({
       toast.success('Déconnexion réussie', {
         description: `À bientôt, ${user.name}.`,
       })
-      logout()
+      void logout()
     }, 200)
   }
 
@@ -146,18 +152,32 @@ export function Sidebar({
           <X className="h-4 w-4" strokeWidth={2.5} />
         </button>
 
-        {/* Logo — centered, larger, no text */}
-        <div className="flex justify-center px-2 py-2">
+        {/* Logo — brand anchor, centered */}
+        <div className="flex justify-center px-2 pb-1 pt-3">
           <img
             src="/logo-AAM.png"
             alt="AAM — Assistances Assurances Mali"
-            className="h-12 w-auto shrink-0 select-none"
-            style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.1))' }}
+            className="h-20 w-auto max-w-full shrink-0 select-none object-contain"
+            style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.1))' }}
           />
         </div>
 
+        {/* Brand separator — logo ↔ navigation */}
+        <div
+          className="mx-1 my-4 flex items-center gap-2.5"
+          role="separator"
+          aria-hidden="true"
+        >
+          <div className="h-[2px] flex-1 rounded-full bg-gradient-to-r from-transparent via-slate-300 to-blue-400/80 dark:via-slate-600 dark:to-blue-500/70" />
+          <div className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+            <span className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 opacity-35 blur-[2px]" />
+            <span className="relative h-2 w-2 rotate-45 rounded-[2px] bg-gradient-to-br from-blue-600 to-emerald-500 shadow-sm shadow-blue-500/40 ring-2 ring-white dark:ring-slate-900" />
+          </div>
+          <div className="h-[2px] flex-1 rounded-full bg-gradient-to-l from-transparent via-slate-300 to-emerald-400/80 dark:via-slate-600 dark:to-emerald-500/70" />
+        </div>
+
         {/* Navigation */}
-        <nav className="mt-7 flex flex-1 flex-col gap-1 overflow-y-auto">
+        <nav className="mt-1 flex flex-1 flex-col gap-1 overflow-y-auto">
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Menu Principal
           </p>
@@ -196,37 +216,11 @@ export function Sidebar({
           })}
         </nav>
 
-        {/* Role badge */}
-        <div className="mb-2 mt-2 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-            Profil RBAC
-          </p>
-          <p className="mt-0.5 text-xs font-semibold text-blue-600">
-            {ROLE_LABELS[user.role]}
-          </p>
-        </div>
-
-        {/* User Profile */}
+        {/* Déconnexion */}
         <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
-          <div className="flex items-center gap-3 rounded-xl px-2 py-2">
-            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-sm font-semibold text-white shadow-sm">
-              {user.avatar}
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-white dark:bg-slate-900">
-                <BadgeCheck className="h-4 w-4 text-blue-500" fill="currentColor" />
-              </span>
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col">
-              <span className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {user.name}
-              </span>
-              <span className="truncate text-xs text-slate-400 dark:text-slate-500">
-                {user.company || ROLE_LABELS[user.role]}
-              </span>
-            </div>
-          </div>
           <button
             onClick={() => setConfirmLogout(true)}
-            className="mt-2 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/40 dark:hover:text-red-400"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-slate-400 dark:hover:bg-red-900/40 dark:hover:text-red-400"
           >
             <LogOut className="h-4 w-4" strokeWidth={2} />
             Déconnexion

@@ -1,7 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Search, Download, Filter, ChevronDown, Loader2 } from 'lucide-react'
+import { Plus, Search, Download, Filter, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
@@ -47,24 +46,7 @@ export function PageHeader({
   filterLabel = 'Filtrer',
   filters = [],
 }: PageHeaderProps) {
-  const [exporting, setExporting] = useState(false)
-
-  const handleExport = () => {
-    if (onSecondaryAction) {
-      onSecondaryAction()
-      return
-    }
-    setExporting(true)
-    toast.info('Export en cours…', {
-      description: 'Génération du fichier Excel des données filtrées.',
-    })
-    setTimeout(() => {
-      setExporting(false)
-      toast.success('Export terminé', {
-        description: 'Le fichier a été téléchargé avec succès.',
-      })
-    }, 1200)
-  }
+  const exportEnabled = Boolean(onSecondaryAction)
 
   return (
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -161,21 +143,18 @@ export function PageHeader({
           </button>
         )}
         <button
-          onClick={handleExport}
-          disabled={exporting}
+          onClick={() => onSecondaryAction?.()}
+          disabled={!exportEnabled}
+          title={exportEnabled ? secondaryActionLabel : 'Export bientôt disponible'}
           className={cn(
-            'flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100',
-            exporting && 'opacity-60'
+            'flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300',
+            exportEnabled
+              ? 'hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100'
+              : 'cursor-not-allowed opacity-50'
           )}
         >
-          {exporting ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" strokeWidth={2} />
-          ) : (
-            <Download className="h-3.5 w-3.5" strokeWidth={2} />
-          )}
-          <span className="hidden sm:inline">
-            {exporting ? 'Export...' : secondaryActionLabel}
-          </span>
+          <Download className="h-3.5 w-3.5" strokeWidth={2} />
+          <span className="hidden sm:inline">{secondaryActionLabel}</span>
         </button>
         {primaryActionLabel && onPrimaryAction && (
           <button

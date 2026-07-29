@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Eye,
   LifeBuoy,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Clock,
   CheckCircle2,
@@ -32,15 +31,11 @@ import { useNav } from '@/lib/nav'
 import { toast } from 'sonner'
 import { Pagination } from '@/components/dashboard/pagination'
 import { usePagination } from '@/lib/use-pagination'
-import { api, formatFCFA, type SinistreDTO } from '@/lib/api'
+import { api, formatFCFA, parseCsvList, type SinistreDTO } from '@/lib/api'
+import { useStats, useInvalidateDashboard } from '@/lib/hooks'
+import { useAuth } from '@/lib/auth'
 
-const STAT_CARDS = [
-  { label: 'Sinistres en cours', value: '47', icon: LifeBuoy, trend: '+5', trendUp: false, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
-  { label: 'Traités (7j)', value: '18', icon: CheckCircle2, trend: '+12%', trendUp: true, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
-  { label: 'En alerte (>72h)', value: '3', icon: AlertTriangle, trend: '-2', trendUp: false, color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/40' },
-  { label: 'Délai moyen', value: '38h', icon: Clock, trend: '-22%', trendUp: true, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
-]
-
+type Branch = 'Auto' | 'Santé' | 'Habitation' | 'Voyage' | 'Vie'
 const BRANCHES: Branch[] = ['Auto', 'Santé', 'Habitation', 'Voyage', 'Vie']
 
 export function SinistresPage() {
@@ -51,6 +46,9 @@ export function SinistresPage() {
   const [brancheFilter, setBrancheFilter] = useState('')
   const [viewSinistre, setViewSinistre] = useState<SinistreDTO | null>(null)
   const [declareOpen, setDeclareOpen] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const queryClient = useQueryClient()
+  const { data: stats } = useStats()
 
   useEffect(() => {
     setPrimaryAction(() => setDeclareOpen(true))
@@ -69,6 +67,14 @@ export function SinistresPage() {
     queryFn: () => api.getSinistres({ statut: statusFilter || undefined, branche: brancheFilter || undefined, search: search || undefined }),
   })
   const filtered = resp?.data || []
+  const t = stats?.totals
+
+  const statCards = [
+    { label: 'Sinistres en cours', value: String(t?.pendingSinistres ?? filtered.filter((s) => s.statut === 'Déclaré' || s.statut === 'En instruction').length), icon: LifeBuoy, hint: 'ouverts', color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/40' },
+    { label: 'Traités', value: String(t?.treatedSinistres ?? filtered.filter((s) => ['Traité', 'Validé', 'Clos'].includes(s.statut)).length), icon: CheckCircle2, hint: 'clos / validés', color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/40' },
+    { label: 'En alerte (>72h)', value: String(t?.alertOver72 ?? filtered.filter((s) => s.delaiH > 72 && (s.statut === 'Déclaré' || s.statut === 'En instruction')).length), icon: AlertTriangle, hint: 'urgence', color: 'text-rose-600', bg: 'bg-rose-50 dark:bg-rose-900/40' },
+    { label: 'Délai moyen', value: `${t?.avgDelaiH ?? (filtered.length ? Math.round(filtered.reduce((a, s) => a + s.delaiH, 0) / filtered.length) : 0)}h`, icon: Clock, hint: 'tous dossiers', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/40' },
+  ]
 
   const { page, pageSize, total, paged, setPage, setPageSize } =
     usePagination(filtered, 5, [search, statusFilter, brancheFilter])
@@ -116,7 +122,7 @@ export function SinistresPage() {
       />
 
       <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {STAT_CARDS.map((s) => {
+        {statCards.map((s) => {
           const Icon = s.icon
           return (
             <div
@@ -131,10 +137,7 @@ export function SinistresPage() {
               </div>
               <div className="flex items-end justify-between">
                 <span className="text-xl font-bold text-slate-900 dark:text-slate-100 sm:text-2xl">{s.value}</span>
-                <span className={`flex items-center gap-0.5 text-xs font-semibold ${s.trendUp ? 'text-emerald-600' : 'text-rose-500'}`}>
-                  {s.trendUp ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-                  {s.trend}
-                </span>
+                <span className="text-xs text-slate-400">{s.hint}</span>
               </div>
             </div>
           )
@@ -179,9 +182,9 @@ export function SinistresPage() {
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-rose-500 text-[10px] font-semibold text-white">
-                          {s.clientNameAvatar}
+                          {s.clientAvatar || s.clientName?.slice(0, 2)?.toUpperCase() || '??'}
                         </span>
-                        <span className="text-slate-800 dark:text-slate-200">{s.clientNameName}</span>
+                        <span className="text-slate-800 dark:text-slate-200">{s.clientName}</span>
                       </div>
                     </td>
                     <td className="px-5 py-3"><BranchBadge branch={s.branche} /></td>
@@ -261,10 +264,10 @@ export function SinistresPage() {
 
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                  Pièces jointes ({viewSinistre.pieces.length})
+                  Pièces jointes ({parseCsvList(viewSinistre.pieces).length})
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {viewSinistre.pieces.map((p) => (
+                  {parseCsvList(viewSinistre.pieces).map((p) => (
                     <span key={p} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
                       <Upload className="h-3 w-3 text-slate-400" />
                       {p}
@@ -294,11 +297,27 @@ export function SinistresPage() {
                   <Button
                     size="sm"
                     className="bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => {
-                      toast.success('Remboursement validé', {
-                        description: `Sinistre ${viewSinistre.reference} — remboursement de ${formatFCFA(viewSinistre.montantDemande)} validé.`,
-                      })
-                      setViewSinistre(null)
+                    disabled={busy}
+                    onClick={async () => {
+                      setBusy(true)
+                      try {
+                        const today = new Date().toLocaleDateString('fr-FR')
+                        await api.updateSinistre(viewSinistre.id, {
+                          statut: 'Validé',
+                          montantRembourse: viewSinistre.montantDemande,
+                          dateTraitement: today,
+                        })
+                        await queryClient.invalidateQueries({ queryKey: ['sinistres'] })
+                        await queryClient.invalidateQueries({ queryKey: ['stats'] })
+                        toast.success('Remboursement validé', {
+                          description: `Sinistre ${viewSinistre.reference} — remboursement de ${formatFCFA(viewSinistre.montantDemande)} validé.`,
+                        })
+                        setViewSinistre(null)
+                      } catch (e) {
+                        toast.error(e instanceof Error ? e.message : 'Erreur lors de la validation')
+                      } finally {
+                        setBusy(false)
+                      }
                     }}
                   >
                     Valider le remboursement
@@ -332,21 +351,43 @@ function DeclareSinistreModal({
   open: boolean
   onOpenChange: (v: boolean) => void
 }) {
+  const { user } = useAuth()
+  const invalidate = useInvalidateDashboard()
   const [form, setForm] = useState({
     contratRef: '',
     branche: '' as Branch | '',
     description: '',
     montantDemande: '',
+    compagnieId: '' as string,
+    companyName: '',
   })
   const [pieces, setPieces] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [completed, setCompleted] = useState(false)
+  const [createdRef, setCreatedRef] = useState('')
+
+  const { data: contratsResp } = useQuery({
+    queryKey: ['contrats', 'sinistre-declare'],
+    queryFn: () => api.getContrats(),
+    enabled: open,
+  })
+  const contrats = (contratsResp?.data || []).filter(
+    (c) => c.statut === 'Actif' || c.statut === 'En attente'
+  )
 
   const reset = () => {
-    setForm({ contratRef: '', branche: '', description: '', montantDemande: '' })
+    setForm({
+      contratRef: '',
+      branche: '',
+      description: '',
+      montantDemande: '',
+      compagnieId: '',
+      companyName: '',
+    })
     setPieces([])
     setSubmitting(false)
     setCompleted(false)
+    setCreatedRef('')
   }
 
   const handleClose = (v: boolean) => {
@@ -354,17 +395,49 @@ function DeclareSinistreModal({
     onOpenChange(v)
   }
 
+  const selectContrat = (ref: string) => {
+    const c = contrats.find((x) => x.reference === ref)
+    setForm((f) => ({
+      ...f,
+      contratRef: ref,
+      branche: (c?.branche as Branch) || '',
+      compagnieId: c?.compagnieId || '',
+      companyName: c?.companyName || '',
+    }))
+  }
+
   const canSubmit = form.contratRef && form.branche && form.description && form.montantDemande
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitting(true)
-    setTimeout(() => {
-      setSubmitting(false)
-      setCompleted(true)
-      toast.success('Sinistre déclaré avec succès', {
-        description: `Référence SIN-2026-0099 · Engagement de traitement sous 72h.`,
+    try {
+      const today = new Date().toLocaleDateString('fr-FR')
+      const res = await api.createSinistre({
+        clientId: user?.role === 'client' ? user.id : undefined,
+        clientName: user?.name || '',
+        clientAvatar: user?.avatar || '',
+        branche: form.branche,
+        contratRef: form.contratRef,
+        description: form.description,
+        montantDemande: Number(form.montantDemande),
+        pieces: pieces.join(','),
+        compagnieId: form.compagnieId || null,
+        companyName: form.companyName,
+        statut: 'Déclaré',
+        dateDeclaration: today,
+        gestionnaire: '',
       })
-    }, 1000)
+      setCreatedRef(res.data.reference)
+      setCompleted(true)
+      invalidate()
+      toast.success('Sinistre déclaré avec succès', {
+        description: `Référence ${res.data.reference} · Engagement de traitement sous 72h.`,
+      })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erreur lors de la déclaration')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -389,7 +462,7 @@ function DeclareSinistreModal({
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Déclaration transmise !</h3>
             <p className="max-w-sm text-sm text-slate-500 dark:text-slate-400">
-              Votre sinistre a été enregistré sous la référence <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">SIN-2026-0099</span>. Le gestionnaire vous contactera sous 72h.
+              Votre sinistre a été enregistré sous la référence <span className="font-mono font-semibold text-blue-600 dark:text-blue-400">{createdRef || '—'}</span>. Le gestionnaire vous contactera sous 72h.
             </p>
             <Button size="sm" onClick={() => handleClose(false)} className="mt-2 bg-blue-600 hover:bg-blue-700">
               Fermer
@@ -400,15 +473,25 @@ function DeclareSinistreModal({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Référence du contrat <span className="text-rose-500">*</span>
+                  Contrat <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   value={form.contratRef}
-                  onChange={(e) => setForm((f) => ({ ...f, contratRef: e.target.value }))}
-                  placeholder="ex: CTR-2026-0142"
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 placeholder:text-slate-400 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
-                />
+                  onChange={(e) => selectContrat(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
+                >
+                  <option value="">Sélectionner un contrat…</option>
+                  {contrats.map((c) => (
+                    <option key={c.id} value={c.reference}>
+                      {c.reference} · {c.branche} · {c.companyName}
+                    </option>
+                  ))}
+                </select>
+                {contrats.length === 0 && (
+                  <p className="mt-1 text-[11px] text-amber-600">
+                    Aucun contrat actif en base.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">
@@ -416,12 +499,16 @@ function DeclareSinistreModal({
                 </label>
                 <select
                   value={form.branche}
-                  onChange={(e) => setForm((f) => ({ ...f, branche: e.target.value as Branch }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, branche: e.target.value as Branch }))
+                  }
                   className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
                 >
-                  <option value="">Sélectionner...</option>
+                  <option value="">Sélectionner…</option>
                   {BRANCHES.map((b) => (
-                    <option key={b} value={b}>{b}</option>
+                    <option key={b} value={b}>
+                      {b}
+                    </option>
                   ))}
                 </select>
               </div>
