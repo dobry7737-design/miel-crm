@@ -155,7 +155,7 @@ export function Sidebar({
         {/* Logo — brand anchor, centered */}
         <div className="flex justify-center px-2 pb-1 pt-3">
           <img
-            src="/logo-AAM.png"
+            src="/logo-aam.jpg"
             alt="AAM — Assistances Assurances Mali"
             className="h-20 w-auto max-w-full shrink-0 select-none object-contain"
             style={{ filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.1))' }}

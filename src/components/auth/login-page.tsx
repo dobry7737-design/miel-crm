@@ -51,7 +51,7 @@ export function LoginPage() {
             {/* Logo — hero brand */}
             <div className="flex flex-col items-center text-center">
               <img
-                src="/logo-AAM.png"
+                src="/logo-aam.jpg"
                 alt="AAM — Assistances Assurances Mali"
                 className="h-28 w-auto select-none object-contain sm:h-32"
                 style={{ filter: 'drop-shadow(0 6px 16px rgba(0,0,0,0.14))' }}

@@ -13,7 +13,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next()
   }
 
-  if (PUBLIC_API.has(pathname)) {
+  if (PUBLIC_API.has(pathname) || pathname.startsWith('/api/public/')) {
     return NextResponse.next()
   }
 

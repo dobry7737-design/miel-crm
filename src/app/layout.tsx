@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   keywords: ["AAM", "assurance", "courtage", "comparateur", "Mali", "CIMA", "devis", "sinistres"],
   authors: [{ name: "AAM" }],
   icons: {
-    icon: "/logo-AAM.png",
+    icon: "/logo.svg",
   },
   openGraph: {
     title: "AAM — Assistances Assurances Mali",
