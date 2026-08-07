@@ -29,13 +29,82 @@ async function main() {
   await db.setting.deleteMany()
   console.log('  ✓ Données vidées')
 
-  // ============ COMPAGNIES ============
+  // ============ COMPAGNIES D'ASSURANCES AU MALI (OFFICIELLES) ============
+  // NON VIE
+  const afg = await db.compagnie.create({
+    data: {
+      nom: 'AFG Assurances Mali',
+      initials: 'AFG',
+      iconColor: 'bg-amber-500',
+      agrement: 'CIMA-AFG-ML-2017',
+      statut: 'Actif',
+      rating: 4.5,
+      delaiTraitement: 18,
+      contact: 'Oumar Diarra',
+      email: 'contact@afg-mali.com',
+      telephone: '+223 20 22 77 88',
+      datePartenariat: '2017-11-08',
+      branches: 'Auto,Santé,Habitation,Voyage,Vie',
+    },
+  })
+
+  const lafia = await db.compagnie.create({
+    data: {
+      nom: 'Assurances Lafia',
+      initials: 'LAF',
+      iconColor: 'bg-teal-500',
+      agrement: 'CIMA-LAFIA-ML-2015',
+      statut: 'Actif',
+      rating: 4.4,
+      delaiTraitement: 24,
+      contact: 'Amadou Touré',
+      email: 'contact@assuranceslafia.ml',
+      telephone: '+223 20 29 10 10',
+      datePartenariat: '2015-05-12',
+      branches: 'Auto,Santé,Habitation',
+    },
+  })
+
+  const cnar = await db.compagnie.create({
+    data: {
+      nom: 'Les Assurances Bleues / CNAR SA',
+      initials: 'CNAR',
+      iconColor: 'bg-blue-600',
+      agrement: 'CIMA-CNAR-ML-2010',
+      statut: 'Actif',
+      rating: 4.6,
+      delaiTraitement: 20,
+      contact: 'Fatoumata Coulibaly',
+      email: 'contact@assurancesbleues.ml',
+      telephone: '+223 20 22 45 67',
+      datePartenariat: '2010-09-01',
+      branches: 'Auto,Santé,Habitation,Voyage',
+    },
+  })
+
+  const nallias = await db.compagnie.create({
+    data: {
+      nom: 'Nallias SA',
+      initials: 'NAL',
+      iconColor: 'bg-indigo-500',
+      agrement: 'CIMA-NAL-ML-2021',
+      statut: 'Actif',
+      rating: 4.3,
+      delaiTraitement: 30,
+      contact: 'Moussa Keïta',
+      email: 'contact@nallias-assurances.ml',
+      telephone: '+223 20 23 11 22',
+      datePartenariat: '2021-04-18',
+      branches: 'Auto,Santé,Habitation',
+    },
+  })
+
   const nsia = await db.compagnie.create({
     data: {
-      nom: 'NSIA Assurances',
-      initials: 'NS',
+      nom: 'NSIA Mali',
+      initials: 'NSIA',
       iconColor: 'bg-blue-500',
-      agrement: 'CIMA-NSIA-2018',
+      agrement: 'CIMA-NSIA-ML-2018',
       statut: 'Actif',
       rating: 4.8,
       delaiTraitement: 28,
@@ -46,44 +115,30 @@ async function main() {
       branches: 'Auto,Santé,Habitation,Voyage,Vie',
     },
   })
-  const sunu = await db.compagnie.create({
+
+  const sabu = await db.compagnie.create({
     data: {
-      nom: 'SUNU Assurances',
-      initials: 'SU',
-      iconColor: 'bg-emerald-500',
-      agrement: 'CIMA-SUNU-2019',
+      nom: 'Sabu Nyuman (SBN)',
+      initials: 'SBN',
+      iconColor: 'bg-lime-600',
+      agrement: 'CIMA-SBN-ML-2016',
       statut: 'Actif',
-      rating: 4.6,
-      delaiTraitement: 35,
-      contact: 'Mariam Cissé',
-      email: 'partenaire@sunu.ml',
-      telephone: '+223 20 22 55 66',
-      datePartenariat: '2019-07-22',
+      rating: 4.4,
+      delaiTraitement: 26,
+      contact: 'Bakary Samaké',
+      email: 'contact@sabunyuman.ml',
+      telephone: '+223 20 21 88 99',
+      datePartenariat: '2016-08-20',
       branches: 'Auto,Santé,Habitation',
     },
   })
-  const afg = await db.compagnie.create({
-    data: {
-      nom: 'AFG Assurances',
-      initials: 'AF',
-      iconColor: 'bg-amber-500',
-      agrement: 'CIMA-AFG-2017',
-      statut: 'Actif',
-      rating: 4.5,
-      delaiTraitement: 14,
-      contact: 'Oumar Diarra',
-      email: 'partenaire@afg.ml',
-      telephone: '+223 20 22 77 88',
-      datePartenariat: '2017-11-08',
-      branches: 'Santé,Vie,Habitation',
-    },
-  })
+
   const sanlam = await db.compagnie.create({
     data: {
-      nom: 'Sanlam Allianz',
-      initials: 'SA',
+      nom: 'SanlamAllianz Mali',
+      initials: 'SAL',
       iconColor: 'bg-rose-500',
-      agrement: 'CIMA-SAL-2020',
+      agrement: 'CIMA-SAL-ML-2020',
       statut: 'Actif',
       rating: 4.7,
       delaiTraitement: 22,
@@ -91,33 +146,179 @@ async function main() {
       email: 'partenaire@sanlam.ml',
       telephone: '+223 20 22 99 00',
       datePartenariat: '2020-02-14',
-      branches: 'Auto,Voyage,Habitation',
+      branches: 'Auto,Voyage,Habitation,Santé',
     },
   })
-  console.log('  ✓ 4 compagnies')
+
+  const sunu = await db.compagnie.create({
+    data: {
+      nom: 'SUNU Assurances Mali',
+      initials: 'SUNU',
+      iconColor: 'bg-emerald-500',
+      agrement: 'CIMA-SUNU-ML-2019',
+      statut: 'Actif',
+      rating: 4.6,
+      delaiTraitement: 35,
+      contact: 'Mariam Cissé',
+      email: 'partenaire@sunu.ml',
+      telephone: '+223 20 22 55 66',
+      datePartenariat: '2019-07-22',
+      branches: 'Auto,Santé,Habitation,Voyage',
+    },
+  })
+
+  // VIE
+  const cifVie = await db.compagnie.create({
+    data: {
+      nom: 'CIF Assurances Vie Mali',
+      initials: 'CIF',
+      iconColor: 'bg-purple-500',
+      agrement: 'CIMA-CIFVIE-ML-2021',
+      statut: 'Actif',
+      rating: 4.5,
+      delaiTraitement: 24,
+      contact: 'Ibrahim Traoré',
+      email: 'contact@cif-vie.ml',
+      telephone: '+223 20 24 33 55',
+      datePartenariat: '2021-01-10',
+      branches: 'Vie,Santé',
+    },
+  })
+
+  const nsiaVie = await db.compagnie.create({
+    data: {
+      nom: 'NSIA Vie Mali',
+      initials: 'NSIA-V',
+      iconColor: 'bg-sky-500',
+      agrement: 'CIMA-NSIAVIE-ML-2018',
+      statut: 'Actif',
+      rating: 4.7,
+      delaiTraitement: 20,
+      contact: 'Aminata Diop',
+      email: 'contact@nsia-vie.ml',
+      telephone: '+223 20 22 33 45',
+      datePartenariat: '2018-03-15',
+      branches: 'Vie',
+    },
+  })
+
+  const sanlamVie = await db.compagnie.create({
+    data: {
+      nom: 'SanlamAllianz Mali Vie',
+      initials: 'SAL-V',
+      iconColor: 'bg-red-500',
+      agrement: 'CIMA-SALVIE-ML-2020',
+      statut: 'Actif',
+      rating: 4.6,
+      delaiTraitement: 22,
+      contact: 'Mahamadou Diallo',
+      email: 'contact@sanlam-vie.ml',
+      telephone: '+223 20 22 99 11',
+      datePartenariat: '2020-02-14',
+      branches: 'Vie',
+    },
+  })
+
+  const sonavie = await db.compagnie.create({
+    data: {
+      nom: 'SONAVIE',
+      initials: 'SON',
+      iconColor: 'bg-violet-600',
+      agrement: 'CIMA-SONAVIE-ML-2005',
+      statut: 'Actif',
+      rating: 4.8,
+      delaiTraitement: 18,
+      contact: 'Alou Sangaré',
+      email: 'contact@sonavie.ml',
+      telephone: '+223 20 22 58 58',
+      datePartenariat: '2005-06-15',
+      branches: 'Vie',
+    },
+  })
+
+  const sunuVie = await db.compagnie.create({
+    data: {
+      nom: 'SUNU Assurances Vie',
+      initials: 'SUNU-V',
+      iconColor: 'bg-teal-600',
+      agrement: 'CIMA-SUNUVIE-ML-2019',
+      statut: 'Actif',
+      rating: 4.6,
+      delaiTraitement: 25,
+      contact: 'Kadiatou Koné',
+      email: 'contact@sunu-vie.ml',
+      telephone: '+223 20 22 55 77',
+      datePartenariat: '2019-07-22',
+      branches: 'Vie',
+    },
+  })
+  console.log('  ✓ 13 compagnies d\'assurances au Mali (8 Non-Vie + 5 Vie)')
 
   // ============ PRODUITS ============
+  const AUTO_RC_TARIFFS = {
+    '1_cv': { 1: 10246, 3: 14492, 6: 21568, 12: 23590 },
+    '2_4_cv': { 1: 11121, 3: 16242, 6: 24779, 12: 40144 },
+    '5_7_cv': { 1: 11856, 3: 17712, 6: 27472, 12: 45040 },
+    '8_10_cv': { 1: 13612, 3: 21223, 6: 33910, 12: 56746 },
+    '11_16_cv': { 1: 16264, 3: 26527, 6: 43634, 12: 74428 },
+    '17_plus_cv': { 1: 18444, 3: 30888, 6: 51628, 12: 88960 },
+  }
   const produitsData = [
     {
       compagnieId: nsia.id,
-      nom: 'Auto Tous Risques',
+      nom: 'Auto Tous Risques (NSIA)',
       branche: 'Auto',
-      tarifsJson: JSON.stringify({ basePrime: 185000 }),
-      garanties: 'Responsabilité civile,Vol & Incendie,Bris de glace,Dommages tous accidents',
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
+      garanties: 'Responsabilité civile,Vol & Incendie,Bris de glace,Dommages tous accidents,Défense & recours',
     },
     {
       compagnieId: sunu.id,
-      nom: 'Auto RC Plus',
+      nom: 'Auto RC Plus (SUNU)',
       branche: 'Auto',
-      tarifsJson: JSON.stringify({ basePrime: 125000 }),
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
       garanties: 'Responsabilité civile,Vol & Incendie,Défense & recours',
     },
     {
       compagnieId: sanlam.id,
-      nom: 'Auto Essentiel',
+      nom: 'Auto Essentiel (SanlamAllianz)',
       branche: 'Auto',
-      tarifsJson: JSON.stringify({ basePrime: 98000 }),
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
+      garanties: 'Responsabilité civile,Bris de glace,Défense & recours',
+    },
+    {
+      compagnieId: cnar.id,
+      nom: 'Auto Sérénité (CNAR / Assurances Bleues)',
+      branche: 'Auto',
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
+      garanties: 'Responsabilité civile,Défense & recours,Assistance 24/7',
+    },
+    {
+      compagnieId: lafia.id,
+      nom: 'Auto Confort (Assurances Lafia)',
+      branche: 'Auto',
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
+      garanties: 'Responsabilité civile,Vol & Incendie',
+    },
+    {
+      compagnieId: sabu.id,
+      nom: 'Auto Populaire (Sabu Nyuman)',
+      branche: 'Auto',
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
+      garanties: 'Responsabilité civile,Défense & recours',
+    },
+    {
+      compagnieId: nallias.id,
+      nom: 'Auto Protection (Nallias SA)',
+      branche: 'Auto',
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
       garanties: 'Responsabilité civile,Bris de glace',
+    },
+    {
+      compagnieId: afg.id,
+      nom: 'Auto Privilège (AFG Assurances)',
+      branche: 'Auto',
+      tarifsJson: JSON.stringify({ basePrime: 45040, rcGrid: AUTO_RC_TARIFFS }),
+      garanties: 'Responsabilité civile,Dommages tous accidents,Assistance 24/7',
     },
     {
       compagnieId: afg.id,
@@ -314,7 +515,7 @@ async function main() {
   console.log('  ✓ 5 utilisateurs')
 
   // ============ DEVIS ============
-  const autoProd = createdProduits['Auto:Auto Tous Risques']
+  const autoProd = createdProduits['Auto:Auto Tous Risques (NSIA)']
   const habitProd = createdProduits['Habitation:Habitation Confort']
   const santeProd = createdProduits['Santé:Santé Famille']
 
