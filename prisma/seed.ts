@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 const db = new PrismaClient()
 
 const PASSWORDS: Record<string, string> = {
-  admin: 'Admin@AAM2026!',
+  admin: 'Oumartidiani7@',
   agent: 'Agent@AAM2026!',
   client: 'Client@AAM2026!',
   gest: 'Gest@AAM2026!',
@@ -458,12 +458,12 @@ async function main() {
   // ============ USERS ============
   const admin = await db.user.create({
     data: {
-      email: 'admin@aam.ml',
+      email: 'contact@aamassistances.com',
       password: await hash(PASSWORDS.admin),
-      name: 'Administrateur AAM',
+      name: 'Oumar Tidiani',
       role: 'admin',
       telephone: '+223 20 22 33 44',
-      avatar: 'AA',
+      avatar: 'OT',
       statut: 'Actif',
     },
   })
@@ -833,11 +833,11 @@ async function main() {
 
   console.log('')
   console.log('✅ Seed terminé. Comptes (bcrypt) :')
-  console.log(`   admin@aam.ml          / ${PASSWORDS.admin}`)
-  console.log(`   agent@aam.ml          / ${PASSWORDS.agent}`)
-  console.log(`   client@aam.ml         / ${PASSWORDS.client}`)
-  console.log(`   sinistres@aam.ml      / ${PASSWORDS.gest}`)
-  console.log(`   partenaire@nsia.ml    / ${PASSWORDS.part}`)
+  console.log(`   contact@aamassistances.com  / ${PASSWORDS.admin} (Admin Principal)`)
+  console.log(`   agent@aam.ml                / ${PASSWORDS.agent}`)
+  console.log(`   client@aam.ml               / ${PASSWORDS.client}`)
+  console.log(`   sinistres@aam.ml            / ${PASSWORDS.gest}`)
+  console.log(`   partenaire@nsia.ml          / ${PASSWORDS.part}`)
 }
 
 main()

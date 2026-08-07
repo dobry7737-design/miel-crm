@@ -29,10 +29,10 @@ Le seed charge des **données métier dynamiques** (compagnies, produits, devis,
 
 | Email | Mot de passe | Rôle |
 |-------|--------------|------|
-| `admin@aam.ml` | `Admin@AAM2026!` | Administrateur |
-| `agent@aam.ml` | `Agent@AAM2026!` | Agent |
+| `contact@aamassistances.com` | `Oumartidiani7@` | Administrateur Principal |
+| `agent@aam.ml` | `Agent@AAM2026!` | Agent Courtier |
 | `client@aam.ml` | `Client@AAM2026!` | Client |
-| `sinistres@aam.ml` | `Gest@AAM2026!` | Gestionnaire |
+| `sinistres@aam.ml` | `Gest@AAM2026!` | Gestionnaire Sinistres |
 | `partenaire@nsia.ml` | `Part@AAM2026!` | Correspondant NSIA |
 
 Changez ces mots de passe en production.
