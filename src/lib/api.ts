@@ -20,8 +20,8 @@ const API_BASE = '/api'
 async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, { credentials: 'include' })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(err.error || `HTTP ${res.status}`)
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error(err.error || err.message || err.details || `HTTP ${res.status}`)
   }
   return res.json()
 }
@@ -34,8 +34,8 @@ async function postJSON<T>(url: string, body?: any): Promise<T> {
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }))
-    throw new Error(err.error || `HTTP ${res.status}`)
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error(err.error || err.message || err.details || `HTTP ${res.status}`)
   }
   return res.json()
 }

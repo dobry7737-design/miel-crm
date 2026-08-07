@@ -83,9 +83,14 @@ export async function POST(req: NextRequest) {
     setSessionCookie(res, token)
     return res
   } catch (error) {
+    const errorMsg =
+      error instanceof Error ? error.message : 'Erreur de connexion'
+    console.error('Login error:', error)
     return NextResponse.json(
       {
-        error: 'Erreur serveur',
+        error: errorMsg.includes('database') || errorMsg.includes('Can\'t reach') || errorMsg.includes('Environment variable')
+          ? `Erreur base de données: vérifiez DATABASE_URL sur Vercel (${errorMsg})`
+          : errorMsg,
         details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
