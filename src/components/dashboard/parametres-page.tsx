@@ -286,59 +286,71 @@ function GeneralTab({ settings, updateField, onSave }: SettingsProps) {
   return (
     <div>
       <SectionTitle
-        title="Informations générales"
-        desc="Identité de la plateforme affichée publiquement"
+        title="Informations générales & Mentions légales"
+        desc="Identité juridique et contacts officiels de la plateforme AAM"
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="Nom de la plateforme">
-          <Input value={settings.nom || ''} onChange={(v) => updateField('nom', v)} />
+        <Field label="Raison sociale">
+          <Input value={settings.nom || 'Assistances Assurances Mali SARL 2639'} onChange={(v) => updateField('nom', v)} />
+        </Field>
+        <Field label="Capital social">
+          <Input value={settings.capital || '20 000 000 FCFA'} onChange={(v) => updateField('capital', v)} />
+        </Field>
+        <Field label="Numéro NINA">
+          <Input value={settings.nina || '42409194445016F'} onChange={(v) => updateField('nina', v)} />
+        </Field>
+        <Field label="Numéro RCCM">
+          <Input value={settings.rccm || 'MA.BKO.2024.B.'} onChange={(v) => updateField('rccm', v)} />
+        </Field>
+        <Field label="Siège Social">
+          <Input value={settings.siegeSocial || 'Hamdallaye ACI 2000, Avenue Tombouctou, Rue 430'} onChange={(v) => updateField('siegeSocial', v)} />
+        </Field>
+        <Field label="Email officiel">
+          <Input value={settings.email || 'contact@aamassistances.com'} onChange={(v) => updateField('email', v)} />
+        </Field>
+        <Field label="Téléphones (Ligne 1 & 2)">
+          <Input value={settings.telephone || '+223 20 29 40 40 / 76 37 37 37'} onChange={(v) => updateField('telephone', v)} />
+        </Field>
+        <Field label="Site web officiel">
+          <Input value={settings.site || 'aamassistances.com'} onChange={(v) => updateField('site', v)} />
         </Field>
         <Field label="Slogan">
-          <Input value={settings.slogan || ''} onChange={(v) => updateField('slogan', v)} />
-        </Field>
-        <Field label="Email contact">
-          <Input value={settings.email || ''} onChange={(v) => updateField('email', v)} />
-        </Field>
-        <Field label="Téléphone">
-          <Input value={settings.telephone || ''} onChange={(v) => updateField('telephone', v)} />
-        </Field>
-        <Field label="Adresse">
-          <Input value={settings.adresse || ''} onChange={(v) => updateField('adresse', v)} />
+          <Input value={settings.slogan || 'Votre confiance, notre engagement'} onChange={(v) => updateField('slogan', v)} />
         </Field>
         <Field label="Langue par défaut">
           <Select
             value={settings.langue || 'fr'}
             onChange={(v) => updateField('langue', v)}
             options={[
-              { value: 'fr', label: 'Français' },
+              { value: 'fr', label: 'Français (CIMA Mali)' },
               { value: 'en', label: 'English' },
               { value: 'bm', label: 'Bambara' },
             ]}
           />
         </Field>
-      </div>
-      <div className="mt-5">
         <Field
           label="Chiffres clés affichés en page publique"
           hint="Valeurs alimentées en back-office"
         >
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Field label="Années d'expérience">
-              <Input value={settings.anneesExperience || ''} onChange={(v) => updateField('anneesExperience', v)} />
+              <Input value={settings.anneesExperience || '15'} onChange={(v) => updateField('anneesExperience', v)} />
             </Field>
             <Field label="Partenaires">
-              <Input value={settings.partenaires || ''} onChange={(v) => updateField('partenaires', v)} />
+              <Input value={settings.partenaires || '13'} onChange={(v) => updateField('partenaires', v)} />
             </Field>
             <Field label="Taux satisfaction (%)">
-              <Input value={settings.tauxSatisfaction || ''} onChange={(v) => updateField('tauxSatisfaction', v)} />
+              <Input value={settings.tauxSatisfaction || '98'} onChange={(v) => updateField('tauxSatisfaction', v)} />
             </Field>
             <Field label="Clients">
-              <Input value={settings.clients || ''} onChange={(v) => updateField('clients', v)} />
+              <Input value={settings.clients || '1250'} onChange={(v) => updateField('clients', v)} />
             </Field>
           </div>
         </Field>
       </div>
-      <SaveButton onSave={onSave} />
+      <div className="mt-5">
+        <SaveButton onSave={onSave} />
+      </div>
     </div>
   )
 }
