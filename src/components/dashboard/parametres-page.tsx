@@ -291,7 +291,7 @@ function GeneralTab({ settings, updateField, onSave }: SettingsProps) {
       />
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Raison sociale">
-          <Input value={settings.nom || 'Assistances Assurances Mali SARL 2639'} onChange={(v) => updateField('nom', v)} />
+          <Input value={settings.nom || 'Assistances Assurances Mali SARL'} onChange={(v) => updateField('nom', v)} />
         </Field>
         <Field label="Capital social">
           <Input value={settings.capital || '20 000 000 FCFA'} onChange={(v) => updateField('capital', v)} />

@@ -138,7 +138,7 @@ export async function sendContratAEmettreEmail(payload: SouscriptionEmailPayload
         </div>
 
         <div class="footer">
-          <p><strong>Assistances Assurances Mali SARL 2639</strong> — Capital : 20 000 000 FCFA</p>
+          <p><strong>Assistances Assurances Mali SARL</strong> — Capital : 20 000 000 FCFA</p>
           <p>Siège Social : Hamdallaye ACI 2000, Avenue Tombouctou, Rue 430, Bamako, Mali</p>
           <p>NINA : 42409194445016F — RCCM : MA.BKO.2024.B.</p>
           <p>Tél : +223 20 29 40 40 / 76 37 37 37 — E-mail : contact@aamassistances.com</p>

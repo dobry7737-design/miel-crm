@@ -718,7 +718,7 @@ async function main() {
 
   // ============ SETTINGS ============
   const settings: Record<string, string> = {
-    nom: 'Assistances Assurances Mali SARL 2639',
+    nom: 'Assistances Assurances Mali SARL',
     capital: '20 000 000 FCFA',
     siegeSocial: 'Hamdallaye ACI 2000, Avenue Tombouctou, Rue 430',
     nina: '42409194445016F',
