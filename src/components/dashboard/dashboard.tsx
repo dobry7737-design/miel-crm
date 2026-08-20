@@ -22,6 +22,7 @@ import { PaiementsPage } from '@/components/dashboard/paiements-page'
 import { AnalyticsPage } from '@/components/dashboard/analytics-page'
 import { UtilisateursPage } from '@/components/dashboard/utilisateurs-page'
 import { ParametresPage } from '@/components/dashboard/parametres-page'
+import { MessageriePage } from '@/components/dashboard/messagerie-page'
 import { useAuth, ROLE_LABELS, type Role } from '@/lib/auth'
 import { useNav, type PageId } from '@/lib/nav'
 import { useUI } from '@/lib/ui-store'
@@ -64,6 +65,7 @@ const PAGE_RBAC: Record<PageId, Role[]> = {
   paiements: ['admin', 'agent', 'client'],
   analytics: ['admin', 'agent'],
   utilisateurs: ['admin'],
+  messagerie: ['admin', 'agent', 'client', 'gestionnaire', 'correspondant'],
   parametres: ['admin', 'agent', 'client', 'gestionnaire', 'correspondant'],
 }
 
@@ -268,7 +270,9 @@ export function Dashboard() {
             {page === 'paiements' && <PaiementsPage />}
             {page === 'analytics' && <AnalyticsPage />}
             {page === 'utilisateurs' && <UtilisateursPage />}
+            {page === 'messagerie' && <MessageriePage />}
             {page === 'parametres' && <ParametresPage />}
+
           </div>
         </main>
       </div>

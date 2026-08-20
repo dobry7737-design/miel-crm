@@ -15,7 +15,9 @@ import {
   X,
   LifeBuoy,
   AlertTriangle,
+  MessageSquare,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { useAuth, ROLE_LABELS, type Role } from '@/lib/auth'
 import { useNav, type PageId } from '@/lib/nav'
@@ -93,6 +95,12 @@ const navItems: NavItem[] = [
     roles: ['admin'],
   },
   {
+    id: 'messagerie',
+    label: 'Messagerie',
+    icon: MessageSquare,
+    roles: ['admin', 'agent', 'client', 'gestionnaire', 'correspondant'],
+  },
+  {
     id: 'parametres',
     label: 'Paramètres',
     icon: Settings,
@@ -110,6 +118,15 @@ export function Sidebar({
   const { user, logout } = useAuth()
   const { page, setPage } = useNav()
   const [confirmLogout, setConfirmLogout] = useState(false)
+
+  // Polling des messages non-lus toutes les 10s
+  const { data: msgData } = useQuery<{ totalUnread: number }>({  
+    queryKey: ['conversations-unread'],
+    queryFn: () => fetch('/api/messages', { credentials: 'include' }).then((r) => r.json()),
+    refetchInterval: 10000,
+    enabled: !!user,
+  })
+  const unreadCount = msgData?.totalUnread ?? 0
 
   if (!user) return null
 
@@ -207,10 +224,14 @@ export function Sidebar({
                   )}
                   strokeWidth={2}
                 />
-                <span className="truncate">{item.label}</span>
-                {isActive && (
+                <span className="flex-1 truncate text-left">{item.label}</span>
+                {item.id === 'messagerie' && unreadCount > 0 ? (
+                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
+                    {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                ) : isActive ? (
                   <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-500" />
-                )}
+                ) : null}
               </button>
             )
           })}

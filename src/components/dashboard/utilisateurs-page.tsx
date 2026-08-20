@@ -381,6 +381,7 @@ function UtilisateurEditModal({
     form.email &&
     (form.role !== 'correspondant' || !!form.companyId)
 
+
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
@@ -435,8 +436,10 @@ function UtilisateurEditModal({
           </DialogTitle>
           <DialogDescription className="text-xs">
             {completed
-              ? 'L\'utilisateur a été enregistré avec succès.'
-              : 'Un email d\'invitation sera envoyé à l\'utilisateur'}
+              ? "L'utilisateur a été enregistré avec succès."
+              : editing
+              ? 'Modifiez les informations de ce compte utilisateur.'
+              : 'Un email d\'invitation sera envoyé à l\'utilisateur. Il définira lui-même son mot de passe via le lien reçu.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -543,18 +546,27 @@ function UtilisateurEditModal({
               </div>
             )}
 
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Statut</label>
-              <select
-                value={form.statut}
-                onChange={(e) => setForm((f) => ({ ...f, statut: e.target.value as typeof form.statut }))}
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
-              >
-                <option value="Invité">Invité (en attente activation)</option>
-                <option value="Actif">Actif</option>
-                <option value="Suspendu">Suspendu</option>
-              </select>
-            </div>
+            {/* Statut — uniquement visible en édition */}
+            {editing && (
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-slate-600 dark:text-slate-300">Statut</label>
+                <select
+                  value={form.statut}
+                  onChange={(e) => setForm((f) => ({ ...f, statut: e.target.value as typeof form.statut }))}
+                  className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/40"
+                >
+                  <option value="Invité">Invité (en attente activation)</option>
+                  <option value="Actif">Actif</option>
+                  <option value="Suspendu">Suspendu</option>
+                </select>
+              </div>
+            )}
+
+            {!editing && (
+              <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-700 dark:border-blue-900/40 dark:bg-blue-900/20 dark:text-blue-300">
+                📧 Un email d'activation sera envoyé à <strong>{form.email || 'l\'adresse saisie'}</strong>. L'utilisateur choisira son propre mot de passe en cliquant sur le lien.
+              </div>
+            )}
 
             <DialogFooter className="border-t border-slate-100 pt-4 dark:border-slate-800">
               <Button variant="outline" size="sm" onClick={() => handleClose(false)}>Annuler</Button>

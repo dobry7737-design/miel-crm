@@ -12,6 +12,7 @@ export type PageId =
   | 'paiements'
   | 'analytics'
   | 'utilisateurs'
+  | 'messagerie'
   | 'parametres'
 
 interface NavState {

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { db } from '@/lib/db'
 import { hashPassword } from '@/lib/password'
 import { isAuthError, requireRole } from '@/lib/api-auth'
+import { sendInvitationEmail } from '@/lib/email'
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,13 +60,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!body.password || String(body.password).length < 8) {
-      return NextResponse.json(
-        { error: 'Mot de passe requis (min. 8 caractères)' },
-        { status: 400 }
-      )
-    }
-
     const existing = await db.user.findUnique({
       where: { email: body.email.toLowerCase() },
     })
@@ -72,29 +67,50 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cet email est déjà utilisé' }, { status: 409 })
     }
 
-    const hashed = await hashPassword(body.password)
-
+    // Création sans mot de passe — l'utilisateur le définira lui-même lors de l'activation
     const user = await db.user.create({
       data: {
         email: body.email.toLowerCase(),
-        password: hashed,
+        password: '', // vide — sera défini lors de l'activation
         name: body.name,
         role: body.role || 'client',
         telephone: body.telephone || '',
-        avatar: body.avatar || '',
-        statut: body.statut || 'Invité',
+        avatar: body.name.split(/\s+/).map((w: string) => w[0]).join('').slice(0, 2).toUpperCase(),
+        statut: 'Invité',
         companyId: body.companyId || null,
       },
+    })
+
+    // Générer le token d'activation (48h de validité)
+    const token = randomBytes(32).toString('hex')
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000)
+
+    await db.invitationToken.create({
+      data: {
+        userId: user.id,
+        token,
+        expiresAt,
+      },
+    })
+
+    // Envoyer l'email d'invitation avec le lien d'activation
+    const invitedByName = body.createdByName || auth.email || 'L\'administrateur AAM'
+    await sendInvitationEmail({
+      to: user.email,
+      name: user.name,
+      role: user.role,
+      invitedByName,
+      token,
     })
 
     await db.auditLog.create({
       data: {
         userId: auth.userId,
         userName: auth.email,
-        action: 'CREATE_USER',
+        action: 'INVITE_USER',
         entity: 'user',
         entityId: user.id,
-        details: `Utilisateur ${body.name} (${body.role || 'client'}) créé`,
+        details: `Invitation envoyée à ${body.name} (${body.role || 'client'}) — token d'activation généré`,
       },
     })
 

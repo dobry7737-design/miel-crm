@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   Sliders,
   Palette,
+  AlertTriangle,
+  Trash2,
 } from 'lucide-react'
 import { PageHeader } from '@/components/dashboard/page-header'
 import { cn } from '@/lib/utils'
@@ -483,6 +485,103 @@ function SecurityTab({ settings, updateField, onSave }: SettingsProps) {
         </Field>
       </div>
       <SaveButton onSave={onSave} />
+
+      {/* Zone Danger — Réinitialisation */}
+      <ResetDangerZone />
+    </div>
+  )
+}
+
+function ResetDangerZone() {
+  const [step, setStep] = useState<'idle' | 'confirm1' | 'confirm2' | 'loading' | 'done'>('idle')
+  const [result, setResult] = useState<Record<string, number> | null>(null)
+
+  async function handleReset() {
+    setStep('loading')
+    try {
+      const res = await fetch('/api/admin/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ confirm: 'REINITIALISER' }),
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setResult(data.deleted)
+        setStep('done')
+        toast.success('Base de données réinitialisée', { description: 'Compagnies, produits et admins conservés.' })
+      } else {
+        throw new Error(data.error || 'Erreur')
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Erreur lors de la réinitialisation')
+      setStep('idle')
+    }
+  }
+
+  return (
+    <div className="mt-8 rounded-2xl border-2 border-rose-200 bg-rose-50 p-5 dark:border-rose-900/50 dark:bg-rose-950/20">
+      <div className="flex items-start gap-3">
+        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-900/40">
+          <AlertTriangle className="h-5 w-5 text-rose-600" strokeWidth={2} />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-rose-800 dark:text-rose-300">Zone Danger — Réinitialisation des données</h3>
+          <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">
+            Supprime irréversiblement <strong>toutes les données transactionnelles</strong> (devis, contrats, sinistres, paiements, utilisateurs non-admin, messages).
+            <br /><strong>Conserve :</strong> comptes admin, compagnies partenaires, produits et paramètres.
+          </p>
+
+          {step === 'idle' && (
+            <button
+              onClick={() => setStep('confirm1')}
+              className="mt-3 flex items-center gap-2 rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-rose-700"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Réinitialiser les données
+            </button>
+          )}
+
+          {step === 'confirm1' && (
+            <div className="mt-3 rounded-xl border border-rose-200 bg-white p-4 dark:border-rose-800 dark:bg-slate-900">
+              <p className="text-xs font-semibold text-rose-700 dark:text-rose-300">⚠️ Confirmez-vous vouloir supprimer toutes les données ?</p>
+              <div className="mt-3 flex gap-2">
+                <button onClick={() => setStep('confirm2')} className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-rose-700">Oui, continuer</button>
+                <button onClick={() => setStep('idle')} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Annuler</button>
+              </div>
+            </div>
+          )}
+
+          {step === 'confirm2' && (
+            <div className="mt-3 rounded-xl border-2 border-rose-400 bg-white p-4 dark:border-rose-700 dark:bg-slate-900">
+              <p className="text-xs font-bold text-rose-700 dark:text-rose-300">🚨 Dernière confirmation — Cette action est irréversible !</p>
+              <div className="mt-3 flex gap-2">
+                <button onClick={handleReset} className="rounded-lg bg-rose-700 px-4 py-1.5 text-xs font-bold text-white hover:bg-rose-800">Confirmer la réinitialisation</button>
+                <button onClick={() => setStep('idle')} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50">Annuler</button>
+              </div>
+            </div>
+          )}
+
+          {step === 'loading' && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-rose-600">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Réinitialisation en cours…
+            </div>
+          )}
+
+          {step === 'done' && result && (
+            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs dark:border-emerald-800 dark:bg-emerald-950/30">
+              <p className="font-bold text-emerald-700 dark:text-emerald-300">✅ Réinitialisation terminée</p>
+              <ul className="mt-1.5 space-y-0.5 text-emerald-600 dark:text-emerald-400">
+                {Object.entries(result).map(([k, v]) => (
+                  <li key={k}>{k} : {v} supprimé(s)</li>
+                ))}
+              </ul>
+              <button onClick={() => setStep('idle')} className="mt-2 text-xs font-medium text-emerald-700 hover:underline">Fermer</button>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

@@ -7,6 +7,17 @@ const SMTP_USER = process.env.SMTP_USER || 'contact@aamassistances.com'
 const SMTP_PASS = process.env.SMTP_PASS || process.env.MAIL_PASS || 'Oumartidiani7@'
 
 const TARGET_ADMIN_EMAIL = 'contact@aamassistances.com'
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://crm.aamassistances.com'
+
+function createTransporter() {
+  return nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_SECURE,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+    tls: { rejectUnauthorized: false },
+  })
+}
 
 export interface SouscriptionEmailPayload {
   reference: string
@@ -149,18 +160,7 @@ export async function sendContratAEmettreEmail(payload: SouscriptionEmailPayload
   `
 
   try {
-    const transporter = nodemailer.createTransport({
-      host: SMTP_HOST,
-      port: SMTP_PORT,
-      secure: SMTP_SECURE,
-      auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    })
+    const transporter = createTransporter()
 
     const info = await transporter.sendMail({
       from: `"AAM Souscriptions" <${SMTP_USER}>`,
@@ -175,6 +175,105 @@ export async function sendContratAEmettreEmail(payload: SouscriptionEmailPayload
   } catch (error) {
     console.error('[Erreur envoi email souscription]:', error)
     // En cas d'erreur de serveur SMTP, on ne bloque pas la souscription dans la base
+    return { success: false, error: error instanceof Error ? error.message : 'SMTP Error' }
+  }
+}
+
+// ============ EMAIL D'INVITATION ============
+
+export async function sendInvitationEmail({
+  to,
+  name,
+  role,
+  invitedByName,
+  token,
+}: {
+  to: string
+  name: string
+  role: string
+  invitedByName: string
+  token: string
+}) {
+  const activationUrl = `${APP_URL}/activation?token=${token}`
+
+  const ROLE_LABELS: Record<string, string> = {
+    admin: 'Administrateur',
+    agent: 'Agent / Courtier',
+    client: 'Client / Assuré',
+    gestionnaire: 'Gestionnaire Sinistres',
+    correspondant: 'Correspondant Partenaire',
+  }
+  const roleLabel = ROLE_LABELS[role] || role
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #f8fafc; margin: 0; padding: 20px; color: #1e293b; }
+        .card { max-width: 600px; margin: 0 auto; background: #fff; border-radius: 16px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+        .header { background: linear-gradient(135deg, #1d4ed8 0%, #0369a1 100%); padding: 32px 28px; text-align: center; }
+        .header h1 { color: #fff; margin: 0 0 6px; font-size: 22px; font-weight: 800; }
+        .header p { color: rgba(255,255,255,0.8); margin: 0; font-size: 13px; }
+        .body { padding: 32px 28px; }
+        .greeting { font-size: 16px; font-weight: 700; color: #0f172a; margin-bottom: 10px; }
+        .msg { font-size: 14px; color: #475569; line-height: 1.7; margin-bottom: 24px; }
+        .role-badge { display: inline-block; background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 700; padding: 4px 14px; border-radius: 999px; margin-bottom: 24px; }
+        .btn-wrap { text-align: center; margin: 28px 0; }
+        .btn { display: inline-block; background: #1d4ed8; color: #fff !important; text-decoration: none; font-weight: 700; font-size: 15px; padding: 14px 36px; border-radius: 50px; letter-spacing: 0.3px; }
+        .warning { background: #fefce8; border: 1px solid #fde047; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #713f12; margin-top: 20px; }
+        .link-fallback { font-size: 11px; color: #94a3b8; word-break: break-all; margin-top: 16px; }
+        .footer { background: #0f172a; color: #64748b; padding: 18px 28px; font-size: 11px; text-align: center; line-height: 1.6; }
+        .footer strong { color: #e2e8f0; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <div class="header">
+          <h1>AAM ASSISTANCES</h1>
+          <p>Plateforme de courtage en assurances — Mali</p>
+        </div>
+        <div class="body">
+          <p class="greeting">Bonjour ${name},</p>
+          <p class="msg">
+            <strong>${invitedByName}</strong> vous invite à rejoindre la plateforme CRM d'<strong>Assistances Assurances Mali</strong>.
+            Votre compte a été créé avec le profil suivant :
+          </p>
+          <div><span class="role-badge">${roleLabel}</span></div>
+          <p class="msg">
+            Cliquez sur le bouton ci-dessous pour <strong>activer votre compte</strong> et choisir votre mot de passe.
+            Ce lien est valable pendant <strong>48 heures</strong>.
+          </p>
+          <div class="btn-wrap">
+            <a href="${activationUrl}" class="btn">✅ Activer mon compte</a>
+          </div>
+          <div class="warning">
+            ⚠️ Si vous n'êtes pas à l'origine de cette invitation, ignorez simplement cet email. Aucune action ne sera requise.
+          </div>
+          <p class="link-fallback">Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>${activationUrl}</p>
+        </div>
+        <div class="footer">
+          <p><strong>Assistances Assurances Mali SARL</strong> — Capital : 20 000 000 FCFA</p>
+          <p>Hamdallaye ACI 2000, Bamako, Mali — contact@aamassistances.com</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  try {
+    const transporter = createTransporter()
+    const info = await transporter.sendMail({
+      from: `"AAM Assistances" <${SMTP_USER}>`,
+      to,
+      subject: `Invitation à rejoindre AAM Assistances — Activez votre compte`,
+      html,
+    })
+    console.log(`[Invitation envoyée] ${to} (messageId: ${info.messageId})`)
+    return { success: true, messageId: info.messageId }
+  } catch (error) {
+    console.error('[Erreur invitation email]:', error)
     return { success: false, error: error instanceof Error ? error.message : 'SMTP Error' }
   }
 }
